@@ -1,7 +1,7 @@
 SRCDIR := src
 OBJDIR := obj
 
-SRC := main.cpp differentiator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp UI.cpp stack.cpp error.cpp
+SRC := main.cpp differentiator.cpp tree.cpp tree_dump.cpp system.cpp log.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
 TARGET := differentiator
 

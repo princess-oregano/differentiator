@@ -30,7 +30,7 @@ tree_resize(tree_t *tree, int new_cap)
         tree->nodes = tmp_nodes;
 
         for (int i = tree->cap; i < new_cap; i++) {
-                tree->nodes[i].data = nullptr;
+                tree->nodes[i].data = {};
                 tree->nodes[i].left = -1;
                 tree->nodes[i].right = -1;
                 tree->nodes[i].next_free = i + 1;
@@ -115,7 +115,7 @@ node_remove(tree_t *tree, int *pos)
                 return ERR_BAD_POS;
         }
 
-        tree->nodes[*pos].data = nullptr;
+        tree->nodes[*pos].data = {};
 
         if (tree->nodes[*pos].left != -1)
                 node_remove(tree, &tree->nodes[*pos].left);

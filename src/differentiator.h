@@ -1,42 +1,40 @@
 #ifndef DIFF_H
 #define DIFF_H
 
+#include <stdio.h>
+#include <sys/stat.h>
 #include "tree.h"
 
 const char *const MATH_PI = "π";
 const char *const MATH_E = "e";
+const char *const MATH_ADD = "+";
+const char *const MATH_SUB = "-";
+const char *const MATH_MUL = "*";
+const char *const MATH_DIV = "/";
+const char *const MATH_SIN = "sin";
+const char *const MATH_COS = "cos";
+const char *const MATH_TAN = "tan";
+const char *const MATH_VAR = "x";
 
-enum op_t {
-        OP_ADD = 0,
-        OP_SUB = 2,
-        OP_MUL = 3,
-        OP_DIV = 4,
+// Error codes.
+enum diff_err_t {
+        D_ERR_NO_ERR = 0,
+        D_ERR_ALLOC = 1,
+        D_ERR_OPEN = 2,
+        D_ERR_STATS = 3,
+        D_ERR_SYNTAX = 4,
+        D_ERR_MAP = 5,
 };
 
-enum diff_t {
-        DIFF_VAR = 0,
-        DIFF_NUM = 1,
-        DIFF_CONST = 2,
-        DIFF_OP  = 3, 
-        DIFF_TRIG = 4,
-};
-
-union value_t {
-        char var;
-        op_t op;
-        const char *m_const;
-        double num;
-        char *trig;
-};
-
-struct data_t {
-        diff_t type = DIFF_VAR;
-        value_t val = {};
+// Structure to store information about file.
+struct file_t {
+        FILE  *stream = nullptr;
+        struct stat stats = {};
 };
 
 // Parses the contents from stream.
 int
-diff_parse();
+diff_parse(tree_t *tree);
 // Takes a derivative of function built from tree.
 int
 diff_take();

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
@@ -48,6 +49,27 @@ generate_graph()
 }
 
 static void
+const_node_graph_dump(tree_t *tree, int curr, int node_count)
+{
+        switch (tree->nodes[curr].data.val.m_const) {
+                case CONST_E:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\ne\", shape = rect]\n",
+                                node_count, curr);
+                        break;
+                case CONST_PI:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\nπ\", shape = rect]\n",
+                                node_count, curr);
+                        break;
+                default:
+                        log("Invalid type encountered.\n");
+                        assert(0 && "Invalid const type encountered.");
+                        break;
+        }
+}
+
+static void
 op_node_graph_dump(tree_t *tree, int curr, int node_count)
 {
         switch (tree->nodes[curr].data.val.op) {
@@ -71,7 +93,19 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 "node%d [label = \"%d\\n/\", shape = rect]\n",
                                 node_count, curr);
                         break;
+                case OP_SIN:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\nsin\", shape = rect]\n",
+                                node_count, curr);
+                        break;
+                case OP_COS:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\ncos\", shape = rect]\n",
+                                node_count, curr);
+                        break;
                 default: 
+                        log("Invalid type encountered.\n");
+                        assert(0 && "Invalid operation type encountered.");
                         break;
         }
 }
@@ -86,13 +120,12 @@ node_graph_dump(tree_t *tree, int curr, int prev)
         switch (tree->nodes[curr].data.type) {
                 case DIFF_POISON: 
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\nNothing.\", shape = rect]\n",
+                                "node%d [label = \"%d\\nVoid.\", shape = rect]\n",
                                 node_count, curr);
-                        break;
                         break;
                 case DIFF_VAR:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%d\", shape = rect]\n",
+                                "node%d [label = \"%d\\n%c\", shape = rect]\n",
                                 node_count, curr, tree->nodes[curr].data.val.var);
                         break;
                 case DIFF_NUM:
@@ -101,14 +134,14 @@ node_graph_dump(tree_t *tree, int curr, int prev)
                                 node_count, curr, tree->nodes[curr].data.val.num);
                         break;
                 case DIFF_CONST:
-                        fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n const %d\", shape = rect]\n",
-                                node_count, curr, tree->nodes[curr].data.val.m_const);
+                        const_node_graph_dump(tree, curr, node_count);
                         break;
                 case DIFF_OP:
                         op_node_graph_dump(tree, curr, node_count);
                         break;
                 default:
+                        log("Invalid type encountered.\n");
+                        assert(0 && "Invalid data type encountered.");
                         break;
         }
 

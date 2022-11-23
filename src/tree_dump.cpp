@@ -48,28 +48,30 @@ generate_graph()
 }
 
 static void
-op_node_graph_dump(tree_t *tree, int curr, int prev, int node_count)
+op_node_graph_dump(tree_t *tree, int curr, int node_count)
 {
         switch (tree->nodes[curr].data.val.op) {
                 case OP_ADD:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%s\", shape = rect]\n",
-                                node_count, curr, MATH_ADD);
+                                "node%d [label = \"%d\\n+\", shape = rect]\n",
+                                node_count, curr);
                         break;
                 case OP_SUB:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%s\", shape = rect]\n",
-                                node_count, curr, MATH_SUB);
+                                "node%d [label = \"%d\\n-\", shape = rect]\n",
+                                node_count, curr);
                         break;
                 case OP_MUL:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%s\", shape = rect]\n",
-                                node_count, curr, MATH_MUL);
+                                "node%d [label = \"%d\\n*\", shape = rect]\n",
+                                node_count, curr);
                         break;
                 case OP_DIV:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%s\", shape = rect]\n",
-                                node_count, curr, MATH_DIV);
+                                "node%d [label = \"%d\\n/\", shape = rect]\n",
+                                node_count, curr);
+                        break;
+                default: 
                         break;
         }
 }
@@ -82,29 +84,32 @@ node_graph_dump(tree_t *tree, int curr, int prev)
 
         // Need to add switch to print data correctly.
         switch (tree->nodes[curr].data.type) {
-                case VAL_POISON: 
+                case DIFF_POISON: 
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\nNothing.\", shape = rect]\n",
                                 node_count, curr);
                         break;
                         break;
-                case VAL_VAR:
+                case DIFF_VAR:
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\n%d\", shape = rect]\n",
                                 node_count, curr, tree->nodes[curr].data.val.var);
                         break;
-                case VAL_NUM:
+                case DIFF_NUM:
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\n%lg\", shape = rect]\n",
                                 node_count, curr, tree->nodes[curr].data.val.num);
                         break;
-                case VAL_CONST:
+                case DIFF_CONST:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n%s\", shape = rect]\n",
+                                "node%d [label = \"%d\\n const %d\", shape = rect]\n",
                                 node_count, curr, tree->nodes[curr].data.val.m_const);
                         break;
-                case VAL_OP:
-                        op_node_graph_dump(tree, curr, prev, node_count);
+                case DIFF_OP:
+                        op_node_graph_dump(tree, curr, node_count);
+                        break;
+                default:
+                        break;
         }
 
         fprintf(DMP_STREAM,

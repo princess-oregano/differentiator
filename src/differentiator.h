@@ -5,17 +5,6 @@
 #include <sys/stat.h>
 #include "tree.h"
 
-const char *const MATH_PI = "π";
-const char *const MATH_E = "e";
-const char *const MATH_ADD = "+";
-const char *const MATH_SUB = "-";
-const char *const MATH_MUL = "*";
-const char *const MATH_DIV = "/";
-const char *const MATH_SIN = "sin";
-const char *const MATH_COS = "cos";
-const char *const MATH_TAN = "tan";
-const char *const MATH_VAR = "x";
-
 // Error codes.
 enum diff_err_t {
         D_ERR_NO_ERR = 0,
@@ -38,9 +27,6 @@ diff_parse(tree_t *tree);
 // Takes a derivative of function built from tree.
 int
 diff_take();
-// Saves the resulting defivative to a file.
-int 
-diff_save();
 
 #endif // DIFF_H
 

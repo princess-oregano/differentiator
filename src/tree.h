@@ -1,39 +1,12 @@
 #ifndef TREE_H
 #define TREE_H
 
-///////////////////////////////////////////////////////////
-// Enum of available operations with numbers.
-enum op_t {
-        OP_ADD = 1,
-        OP_SUB = 2,
-        OP_MUL = 3,
-        OP_DIV = 4,
-};
+#include "types.h"
 
-// Enum of available objects that can be differentiated.
-enum val_type_t {
-        VAL_POISON = 0,
-        VAL_VAR = 1,
-        VAL_NUM = 2,
-        VAL_CONST = 3,
-        VAL_OP  = 4, 
-};
-
-// Union containing one of avalable objects.
-union value_t {
-        char var;
-        op_t op;
-        const char *m_const;
-        double num;
-        char *trig;
-};
-
-// Data stored in tree node.
 struct tree_data_t {
-        val_type_t type = VAL_VAR;
+        diff_obj_type_t type = DIFF_POISON;
         value_t val = {};
 };
-///////////////////////////////////////////////////////////
 
 enum tree_error_t {
         ERR_NO_ERR = 0,

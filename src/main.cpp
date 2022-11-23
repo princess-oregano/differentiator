@@ -11,10 +11,6 @@ main()
         tree_ctor(&tree, 100);
 
         diff_parse(&tree);
-        fprintf(stderr, "left = %lg, center = %d, right = %lg", 
-                tree.nodes[tree.nodes[tree.root].left].data.val.num, 
-                tree.nodes[tree.root].data.val.op,
-                tree.nodes[tree.nodes[tree.root].right].data.val.num);
 
         include_graph(tree_graph_dump(&tree));
 

@@ -82,6 +82,11 @@ diff_parse(tree_t *tree)
 static int 
 diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        assert(eq);
+        assert(diff);
+        assert(epos);
+        assert(dpos);
+
         switch(eq->nodes[*epos].data.val.op) {
                 case OP_ADD:
                         diff->nodes[*dpos].data.val.op = OP_ADD;
@@ -113,6 +118,11 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 int 
 diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        assert(eq);
+        assert(diff);
+        assert(epos);
+        assert(dpos);
+
         // Insert node to derivative tree.
         node_insert(diff, dpos, {DIFF_POISON, {}});
 
@@ -140,6 +150,7 @@ diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos)
                         break;
                 // Operation; needs to be handled specifically.
                 case DIFF_OP:
+                        diff->nodes[*dpos].data.type = DIFF_OP;
                         diff_take_op(eq, diff, epos, dpos);
                         break;
                 // Type of node should never be outside of enum.

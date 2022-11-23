@@ -62,7 +62,8 @@ lex_long(char *buffer, token_t *token)
 
         // Check if number.
         bool number = true;
-        while(i < strlen(str)) {            // Later add support of float.
+        int len = (int) strlen(str);
+        while(i < len) {            // Later add support of float.
                 if (!isdigit(str[i])) {
                         number = false;
                         break;
@@ -110,13 +111,11 @@ lexer(char *buffer, tok_arr_t *tok_arr)
         int i = 0;
         int lex_ret = 0;
         int tok_count = 0;
-        fprintf(stderr, "sizeof buffer = %zu", sizeof(buffer));
-        fprintf(stderr, "strlen buffer = %zu", strlen(buffer));
-        while (i < strlen(buffer) - 1) {
+        int len = (int) strlen(buffer) - 1;
+        while (i < len) {
                 while (isspace(buffer[i]))
                         i++;
 
-                fprintf(stderr, "buffer[i] = '%c'\n", buffer[i]);
                 switch (buffer[i]) {
                         case '(':
                                 tok_arr->ptr[tok_count].type = DIFF_BRACE;
@@ -168,7 +167,6 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                                 break;
                 }
 
-                fprintf(stderr, "i = %d\n", i);
                 i++;
 
                 if (tok_arr->cap > tok_count + 1) {

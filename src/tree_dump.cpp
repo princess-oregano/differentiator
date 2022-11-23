@@ -43,7 +43,8 @@ generate_graph()
         memcpy(PNG_FILENAME, DOT_FILENAME, strlen(DOT_FILENAME));
         strcat(PNG_FILENAME, ".png");
 
-        system_wformat("%s %s %s %s", "dot -Tpng", DOT_FILENAME, ">", PNG_FILENAME);
+        system_wformat("%s %s %s %s", "dot -Tpng",
+                        DOT_FILENAME, ">", PNG_FILENAME);
 
         return PNG_FILENAME;
 }
@@ -103,7 +104,7 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 "node%d [label = \"%d\\ncos\", shape = rect]\n",
                                 node_count, curr);
                         break;
-                default: 
+                default:
                         log("Invalid type encountered.\n");
                         assert(0 && "Invalid operation type encountered.");
                         break;
@@ -118,7 +119,7 @@ node_graph_dump(tree_t *tree, int curr, int prev)
 
         // Need to add switch to print data correctly.
         switch (tree->nodes[curr].data.type) {
-                case DIFF_POISON: 
+                case DIFF_POISON:
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\nVoid.\", shape = rect]\n",
                                 node_count, curr);

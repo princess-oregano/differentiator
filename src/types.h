@@ -22,7 +22,7 @@ enum diff_obj_type_t {
         DIFF_VAR    = 1,
         DIFF_NUM    = 2,
         DIFF_CONST  = 3,
-        DIFF_OP     = 4, 
+        DIFF_OP     = 4,
 #ifdef LEXER_H
         DIFF_BRACE  = 5,
 #endif

@@ -33,7 +33,7 @@ parse(tree_t *tree, token_t *tokens, int *pos)
 
                         // Proceed to the next after closing brace token.
                         count += 2;
-                        
+
                         return PAR_NO_ERR;
                 } else {
                         // Check if brace after opening brace is not closing.
@@ -56,7 +56,7 @@ parse(tree_t *tree, token_t *tokens, int *pos)
                         // TODO: add trigonometry support.
                         parse(tree, tokens, &tree->nodes[*pos].right);
                 }
-                
+
         }
 
         return PAR_NO_ERR;

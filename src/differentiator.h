@@ -26,7 +26,7 @@ struct file_t {
 int
 diff_parse(tree_t *tree);
 // Takes a derivative of function built from tree.
-int 
+int
 diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos);
 
 #endif // DIFF_H

@@ -72,14 +72,14 @@ diff_parse(tree_t *tree)
         parse(tree, tok_arr.ptr, &tree->root);
 
         free(tok_arr.ptr);
-        include_graph(tree_graph_dump(tree)); 
+        include_graph(tree_graph_dump(tree));
 
         return D_ERR_NO_ERR;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static int 
+static int
 diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         assert(eq);
@@ -91,15 +91,19 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
                 case OP_ADD:
                         diff->nodes[*dpos].data.val.op = OP_ADD;
 
-                        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[*dpos].left);
-                        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].right);
+                        diff_take(eq, diff, &eq->nodes[*epos].left,
+                                        &diff->nodes[*dpos].left);
+                        diff_take(eq, diff, &eq->nodes[*epos].right,
+                                        &diff->nodes[*dpos].right);
 
                         break;
                 case OP_SUB:
                         diff->nodes[*dpos].data.val.op = OP_SUB;
 
-                        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[*dpos].left);
-                        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].right);
+                        diff_take(eq, diff, &eq->nodes[*epos].left,
+                                        &diff->nodes[*dpos].left);
+                        diff_take(eq, diff, &eq->nodes[*epos].right,
+                                        &diff->nodes[*dpos].right);
 
                         break;
                 case OP_MUL:
@@ -115,7 +119,7 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         return D_ERR_NO_ERR;
 }
 
-int 
+int
 diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         assert(eq);

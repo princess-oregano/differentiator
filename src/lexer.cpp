@@ -16,7 +16,7 @@ lex_alloc(tok_arr_t *tok_arr, int cap)
 
         token_t *tmp = nullptr;
         tmp = (token_t *) realloc(tok_arr->ptr, (size_t) cap * sizeof(token_t));
-        
+
         if (tmp == nullptr) {
                 log("Couldn't allocate momry for tokens.\n");
                 return LEX_ALLOC;
@@ -56,7 +56,7 @@ lex_long(char *buffer, token_t *token)
         assert(token);
 
         int i = 0;
-        
+
         char *str = nullptr;
         int count = get_2delim_buf(&str, '(', ')', buffer);
 
@@ -103,7 +103,7 @@ lexer(char *buffer, tok_arr_t *tok_arr)
 {
         log("Entering %s.\n", __PRETTY_FUNCTION__);
 
-        assert(buffer);   
+        assert(buffer);
         assert(tok_arr);
 
         lex_alloc(tok_arr, 100);
@@ -158,7 +158,8 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                                 tok_count++;
                                 break;
                         default:
-                                if ((lex_ret = lex_long(&buffer[i], &tok_arr->ptr[tok_count])) == -1) {
+                                if ((lex_ret = lex_long(&buffer[i],
+                                     &tok_arr->ptr[tok_count])) == -1) {
                                         return LEX_INV_CH;
                                 } else {
                                         i += lex_ret - 1;

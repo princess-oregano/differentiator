@@ -3,16 +3,16 @@
 
 #include "types.h"
 
-struct tree_data_t {
-        diff_obj_type_t type = DIFF_POISON;
-        value_t val = {};
-};
-
 enum tree_error_t {
         ERR_NO_ERR = 0,
         ERR_ALLOC = 1,
         ERR_BAD_POS = 2,
         ERR_BAD_CAP = 3,
+};
+
+struct tree_data_t {
+        diff_obj_type_t type = DIFF_POISON;
+        value_t val = {};
 };
 
 struct tree_node_t {

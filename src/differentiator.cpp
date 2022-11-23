@@ -5,8 +5,11 @@
 #include "differentiator.h"
 #include "lexer.h"
 #include "parser.h"
+#include "tree.h"
 #include "tree_dump.h"
 #include "log.h"
+
+////////////////////////////////////////////////////////////////////////////////
 
 // Makes a structure with info about file.
 static int
@@ -70,6 +73,80 @@ diff_parse(tree_t *tree)
 
         free(tok_arr.ptr);
         include_graph(tree_graph_dump(tree)); 
+
+        return D_ERR_NO_ERR;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+static int 
+diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        switch(eq->nodes[*epos].data.val.op) {
+                case OP_ADD:
+                        diff->nodes[*dpos].data.val.op = OP_ADD;
+
+                        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[*dpos].left);
+                        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].right);
+
+                        break;
+                case OP_SUB:
+                        diff->nodes[*dpos].data.val.op = OP_SUB;
+
+                        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[*dpos].left);
+                        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].right);
+
+                        break;
+                case OP_MUL:
+                case OP_DIV:
+                case OP_SIN:
+                case OP_COS:
+                        assert(0 && "Operation is not yet handled.\n");
+                default:
+                        assert(0 && "Invalid operation type.");
+                        break;
+        }
+
+        return D_ERR_NO_ERR;
+}
+
+int 
+diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        // Insert node to derivative tree.
+        node_insert(diff, dpos, {DIFF_POISON, {}});
+
+        // Process node from equation tree.
+        switch (eq->nodes[*epos].data.type) {
+                // The program should never meet poison node.
+                case DIFF_POISON:
+                        log("Error: empty node encoutered while "
+                            "taking the derivative.\n");
+                        return D_ERR_EMPTY;
+                // Variable; always 1.
+                case DIFF_VAR:
+                        diff->nodes[*dpos].data.type = DIFF_NUM;
+                        diff->nodes[*dpos].data.val.num = 1;
+                        break;
+                // Constant number; always 0.
+                case DIFF_NUM:
+                        diff->nodes[*dpos].data.type = DIFF_NUM;
+                        diff->nodes[*dpos].data.val.num = 0;
+                        break;
+                // Math constant; always 0.
+                case DIFF_CONST:
+                        diff->nodes[*dpos].data.type = DIFF_NUM;
+                        diff->nodes[*dpos].data.val.num = 0;
+                        break;
+                // Operation; needs to be handled specifically.
+                case DIFF_OP:
+                        diff_take_op(eq, diff, epos, dpos);
+                        break;
+                // Type of node should never be outside of enum.
+                default:
+                        assert(0 && "Invalid type of node.");
+                        break;
+        }
 
         return D_ERR_NO_ERR;
 }

@@ -79,6 +79,23 @@ diff_parse(tree_t *tree)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static void
+diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        node_insert(diff, dpos, {DIFF_POISON, {}});
+
+        diff->nodes[*dpos].data = eq->nodes[*epos].data;
+       
+        if (eq->nodes[*epos].left != -1) {
+                diff_copy(eq, diff, &eq->nodes[*epos].left, 
+                                &diff->nodes[*dpos].left);
+        }
+        if (eq->nodes[*epos].right != -1) {
+                diff_copy(eq, diff, &eq->nodes[*epos].right, 
+                                &diff->nodes[*dpos].right);
+        }
+}
+
 static int
 diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
@@ -107,6 +124,23 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
                         break;
                 case OP_MUL:
+                        diff->nodes[*dpos].data.val.op = OP_ADD;
+        
+                        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}}); 
+                        diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_OP;
+                        diff->nodes[diff->nodes[*dpos].left].data.val.op = OP_MUL;
+
+                        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}}); 
+                        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
+                        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_MUL;
+
+                        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].left].left);
+                        diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].left].right);
+                        
+                        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].left);
+                        diff_copy(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].right].right);
+
+                        break;
                 case OP_DIV:
                 case OP_SIN:
                 case OP_COS:

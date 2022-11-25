@@ -104,6 +104,11 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 "node%d [label = \"%d\\ncos\", shape = rect]\n",
                                 node_count, curr);
                         break;
+                case OP_POW:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\n^\", shape = rect]\n",
+                                node_count, curr);
+                        break;
                 default:
                         log("Invalid type encountered.\n");
                         assert(0 && "Invalid operation type encountered.");
@@ -113,7 +118,7 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
 
 // Creates a graphviz dump of node and all nide's children.
 static void
-node_graph_dump(tree_t *tree, int curr, int prev)
+node_graph_dump(tree_t *tree, int curr, int prev, const char *color)
 {
         static int node_count = 1;
 
@@ -147,15 +152,16 @@ node_graph_dump(tree_t *tree, int curr, int prev)
         }
 
         fprintf(DMP_STREAM,
-        "node%d -> node%d [arrowhead = none]\n", prev, node_count++);
+        "node%d -> node%d [arrowhead = none, color = %s]\n", 
+                prev, node_count++, color);
 
         prev = node_count - 1;
 
         if (tree->nodes[curr].left != -1)
-                node_graph_dump(tree, tree->nodes[curr].left, prev);
+                node_graph_dump(tree, tree->nodes[curr].left, prev, "crimson");
 
         if (tree->nodes[curr].right != -1)
-                node_graph_dump(tree, tree->nodes[curr].right, prev);
+                node_graph_dump(tree, tree->nodes[curr].right, prev, "cyan");
 }
 
 char *
@@ -172,7 +178,7 @@ tree_graph_dump(tree_t *tree)
         fprintf(DMP_STREAM,
         "node0[label = \"root\", shape = rect]\n");
 
-        node_graph_dump(tree, tree->root, 0);
+        node_graph_dump(tree, tree->root, 0, "deeppink");
 
         fprintf(DMP_STREAM, "}\n");
 

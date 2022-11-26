@@ -101,8 +101,6 @@ lex_long(char *buffer, token_t *token)
 int
 lexer(char *buffer, tok_arr_t *tok_arr)
 {
-        log("Entering %s.\n", __PRETTY_FUNCTION__);
-
         assert(buffer);
         assert(tok_arr);
 
@@ -152,6 +150,11 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                                 tok_arr->ptr[tok_count].val.op = OP_DIV;
                                 tok_count++;
                                 break;
+                        case '^':
+                                tok_arr->ptr[tok_count].type = DIFF_OP;
+                                tok_arr->ptr[tok_count].val.op = OP_POW;
+                                tok_count++;
+                                break;
                         case 'e':
                                 tok_arr->ptr[tok_count].type = DIFF_CONST;
                                 tok_arr->ptr[tok_count].val.m_const = CONST_E;
@@ -160,9 +163,10 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                         default:
                                 if ((lex_ret = lex_long(&buffer[i],
                                      &tok_arr->ptr[tok_count])) == -1) {
+                                        log("Invalid command.\n");
                                         return LEX_INV_CH;
                                 } else {
-                                        i += lex_ret - 1;
+                                        i += lex_ret- 1;
                                         tok_count++;
                                 }
                                 break;
@@ -173,9 +177,8 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                 if (tok_arr->cap > tok_count + 1) {
                         lex_alloc(tok_arr, tok_arr->cap * 2);
                 }
-        }
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
+        }
 
         return LEX_NO_ERR;
 }

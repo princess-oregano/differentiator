@@ -15,12 +15,12 @@ main()
 
         diff_parse(&eq);
 
-        include_graph(tree_graph_dump(&eq));
+        include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
 
         diff_take(&eq, &diff, &eq.root, &diff.root);
 
-        include_graph(tree_graph_dump(&eq));
-        include_graph(tree_graph_dump(&diff));
+        include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
+        include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
 
         tree_dtor(&eq);
         tree_dtor(&diff);

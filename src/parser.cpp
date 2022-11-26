@@ -68,7 +68,7 @@ parse(tree_t *tree, token_t *tokens, int *pos)
                         // It IS here, overwise, error would occur.
                         count++;
                 }
-                include_graph(tree_graph_dump(tree));
+                include_graph(tree_graph_dump(tree, VAR_INFO(tree)));
         } else {
                 log("count = %d", count);
                 log("Expected opening brace.\n");

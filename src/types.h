@@ -7,8 +7,9 @@ enum op_t {
         OP_SUB = 2,
         OP_MUL = 3,
         OP_DIV = 4,
-        OP_SIN = 5,
-        OP_COS = 6,
+        OP_POW = 5,
+        OP_SIN = 6,
+        OP_COS = 7,
 };
 
 enum math_const_t {

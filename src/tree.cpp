@@ -8,8 +8,6 @@
 static int
 tree_resize(tree_t *tree, int new_cap)
 {
-        log("Entered %s.\n", __PRETTY_FUNCTION__);
-
         if (new_cap <= 0) {
                 log("Error: Invalid capacity.\n"
                     "Exiting %s.\n", __PRETTY_FUNCTION__);
@@ -39,16 +37,12 @@ tree_resize(tree_t *tree, int new_cap)
         tree->nodes[tree->cap].next_free = tree->cap + 1;
         tree->cap = new_cap;
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return ERR_NO_ERR;
 }
 
 int
 tree_ctor(tree_t *tree, int cap)
 {
-        log("Entered %s.\n", __PRETTY_FUNCTION__);
-
         int err = ERR_NO_ERR;
 
         if ((err = tree_resize(tree, cap)) != ERR_NO_ERR)
@@ -56,16 +50,12 @@ tree_ctor(tree_t *tree, int cap)
 
         tree->free = 0;
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return ERR_NO_ERR;
 }
 
 int
 node_insert(tree_t *tree, int *parent, tree_data_t data)
 {
-        log("Entered %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
         assert(parent);
         assert(*parent >= -1);
@@ -82,16 +72,12 @@ node_insert(tree_t *tree, int *parent, tree_data_t data)
                         return err;
         }
 
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
-
         return ERR_NO_ERR;
 }
 
 void
 node_bound(int *parent, int node)
 {
-        log("Entered %s.\n", __PRETTY_FUNCTION__);
-
         assert(parent);
 
         if (*parent != -1 && node != 0) {
@@ -100,15 +86,11 @@ node_bound(int *parent, int node)
         }
 
         *parent = node;
-
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 }
 
 int
 node_remove(tree_t *tree, int *pos)
 {
-        log("Entered %s.\n", __PRETTY_FUNCTION__);
-
         assert(tree);
         if (*pos < 0) {
                 log("Invalid position.\n");
@@ -130,8 +112,6 @@ node_remove(tree_t *tree, int *pos)
         tree->free = *pos;
 
         *pos = -1;
-
-        log("Exiting %s.\n", __PRETTY_FUNCTION__);
 
         return ERR_NO_ERR;
 }

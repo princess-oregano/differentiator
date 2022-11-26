@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+#include "lexer.h"
 #include "differentiator.h"
 #include "tree_dump.h"
 #include "system.h"
@@ -124,6 +125,11 @@ node_graph_dump(tree_t *tree, int curr, int prev, const char *color)
 
         // Need to add switch to print data correctly.
         switch (tree->nodes[curr].data.type) {
+                case DIFF_BRACE:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\nClosed = %d\", shape = rect]\n",
+                                node_count, curr, tree->nodes[curr].data.val.closed);
+                        break;
                 case DIFF_POISON:
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\nVoid.\", shape = rect]\n",
@@ -146,13 +152,14 @@ node_graph_dump(tree_t *tree, int curr, int prev, const char *color)
                         op_node_graph_dump(tree, curr, node_count);
                         break;
                 default:
-                        log("Invalid type encountered.\n");
+                        log("Invalid type encountered: type = %d.\n",
+                                        tree->nodes[curr].data.type);
                         assert(0 && "Invalid data type encountered.");
                         break;
         }
 
         fprintf(DMP_STREAM,
-        "node%d -> node%d [arrowhead = none, color = %s]\n", 
+        "node%d -> node%d [arrowhead = none, color = %s]\n",
                 prev, node_count++, color);
 
         prev = node_count - 1;
@@ -165,9 +172,15 @@ node_graph_dump(tree_t *tree, int curr, int prev, const char *color)
 }
 
 char *
-tree_graph_dump(tree_t *tree)
+tree_graph_dump(tree_t *tree, var_info_t var_info)
 {
         open_graph_dump();
+
+        log("TREE DUMP\n");
+        log("%s[%p] %s at %s(%d)\n",
+                var_info.init_var_name, tree,
+                var_info.func_name, var_info.file_name,
+                var_info.line);
 
         fprintf(DMP_STREAM,
         "digraph G {\n"

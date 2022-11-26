@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "log.h"
 #include "parser.h"
+#include "tree_dump.h"
 
 int
 parse(tree_t *tree, token_t *tokens, int *pos)
@@ -27,12 +28,17 @@ parse(tree_t *tree, token_t *tokens, int *pos)
                                 return PAR_BRACE;
                         }
 
+                        if (tokens[count].type == DIFF_OP) {
+                                log("Cannot perform operations with operation.\n");
+                                return PAR_OP;
+                        }
+
                         // Initialize token.
                         tree->nodes[*pos].data.type = tokens[count].type;
                         tree->nodes[*pos].data.val = tokens[count].val;
 
-                        // Proceed to the next after closing brace token.
-                        count += 2;
+                        // Proceed to the next token.
+                        count++;
 
                         return PAR_NO_ERR;
                 } else {
@@ -44,6 +50,9 @@ parse(tree_t *tree, token_t *tokens, int *pos)
 
                         // Init left child.
                         parse(tree, tokens, &tree->nodes[*pos].left);
+                        // Move from closing brace token.
+                        // It IS here, overwise, error would occur.
+                        count++;
 
                         // Init the parent node.
                         tree->nodes[*pos].data.type = tokens[count].type;
@@ -55,8 +64,15 @@ parse(tree_t *tree, token_t *tokens, int *pos)
                         // Init the right child.
                         // TODO: add trigonometry support.
                         parse(tree, tokens, &tree->nodes[*pos].right);
+                        // Move from closing brace token.
+                        // It IS here, overwise, error would occur.
+                        count++;
                 }
-
+                include_graph(tree_graph_dump(tree));
+        } else {
+                log("count = %d", count);
+                log("Expected opening brace.\n");
+                return PAR_BRACE;
         }
 
         return PAR_NO_ERR;

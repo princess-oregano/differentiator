@@ -87,6 +87,9 @@ lex_long(char *buffer, token_t *token)
         } else if (strcmp(str, "cos") == 0) {
                 token->type = DIFF_OP;
                 token->val.op = OP_COS;
+        } else if (strcmp(str, "ln") == 0) {
+                token->type = DIFF_OP;
+                token->val.op = OP_LN;
         } else {
                 log("Invalid usage: unknown operation '%s'.\n", str);
                 free(str);

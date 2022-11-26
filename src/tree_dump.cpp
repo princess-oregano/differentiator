@@ -95,6 +95,11 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 "node%d [label = \"%d\\n/\", shape = rect]\n",
                                 node_count, curr);
                         break;
+                case OP_POW:
+                        fprintf(DMP_STREAM,
+                                "node%d [label = \"%d\\n^\", shape = rect]\n",
+                                node_count, curr);
+                        break;
                 case OP_SIN:
                         fprintf(DMP_STREAM,
                                 "node%d [label = \"%d\\nsin\", shape = rect]\n",
@@ -105,9 +110,9 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 "node%d [label = \"%d\\ncos\", shape = rect]\n",
                                 node_count, curr);
                         break;
-                case OP_POW:
+                case OP_LN:
                         fprintf(DMP_STREAM,
-                                "node%d [label = \"%d\\n^\", shape = rect]\n",
+                                "node%d [label = \"%d\\nln\", shape = rect]\n",
                                 node_count, curr);
                         break;
                 default:

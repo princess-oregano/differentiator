@@ -7,6 +7,7 @@
 #include "tree.h"
 #include "tree_dump.h"
 #include "log.h"
+#include "types.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -75,13 +76,13 @@ diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         node_insert(diff, dpos, {DIFF_POISON, {}});
 
         diff->nodes[*dpos].data = eq->nodes[*epos].data;
-       
+
         if (eq->nodes[*epos].left != -1) {
-                diff_copy(eq, diff, &eq->nodes[*epos].left, 
+                diff_copy(eq, diff, &eq->nodes[*epos].left,
                                 &diff->nodes[*dpos].left);
         }
         if (eq->nodes[*epos].right != -1) {
-                diff_copy(eq, diff, &eq->nodes[*epos].right, 
+                diff_copy(eq, diff, &eq->nodes[*epos].right,
                                 &diff->nodes[*dpos].right);
         }
 }
@@ -91,17 +92,17 @@ diff_take_mul(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         diff->nodes[*dpos].data.val.op = OP_ADD;
 
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}}); 
+        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_OP;
         diff->nodes[diff->nodes[*dpos].left].data.val.op = OP_MUL;
 
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}}); 
+        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
         diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_MUL;
 
         diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].left].left);
         diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].left].right);
-        
+
         diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].left);
         diff_copy(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].right].right);
 }
@@ -112,13 +113,13 @@ diff_take_div(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         diff->nodes[*dpos].data.val.op = OP_DIV;
 
         // Left subtree.
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}}); 
-        diff_take_mul(eq, diff, epos, &diff->nodes[*dpos].left); 
+        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
+        diff_take_mul(eq, diff, epos, &diff->nodes[*dpos].left);
         diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_OP;
         diff->nodes[diff->nodes[*dpos].left].data.val.op = OP_SUB;
 
         // Right subtree.
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}}); 
+        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
         diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_POW;
 
@@ -133,34 +134,53 @@ static void
 diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         diff->nodes[*dpos].data.val.op = OP_MUL;
-  
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}}); 
+
+        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_NUM;
         diff->nodes[diff->nodes[*dpos].left].data.val.num =
                 eq->nodes[eq->nodes[*epos].right].data.val.num;
-  
+
         // Power (x)^(a-1).
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}}); 
+        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
         diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_POW;
-  
+
         // (x)
-        diff_copy(eq, diff, &eq->nodes[*epos].left, 
+        diff_copy(eq, diff, &eq->nodes[*epos].left,
                         &diff->nodes[diff->nodes[*dpos].right].left);
-  
+
         // (a-1).
-        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].right, {DIFF_POISON, {}}); 
+        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].right, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.type = DIFF_OP;
         diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.val.op = OP_SUB;
-  
-        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left, {DIFF_POISON, {}}); 
+
+        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left].data.type = DIFF_NUM;
         diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left].data.val.num =
                 eq->nodes[eq->nodes[*epos].right].data.val.num;
-        
-        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right, {DIFF_POISON, {}}); 
+
+        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right, {DIFF_POISON, {}});
         diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right].data.type = DIFF_NUM;
         diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right].data.val.num = 1;
+}
+
+static void
+diff_take_sin(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        diff->nodes[*dpos].data.val.op = OP_MUL;
+      
+        // Left subtree.
+        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].left);
+
+        // Right subtree.
+        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
+        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
+        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_COS;
+
+        diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].right);
+
+        // No left child for trigonometric functions.
+        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].left, {DIFF_POISON, {}});
 }
 
 static int
@@ -203,7 +223,11 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
                         break;
                 case OP_SIN:
+                        diff_take_sin(eq, diff, epos, dpos);
+
+                        break;
                 case OP_COS:
+                case OP_LN:
                         assert(0 && "Operation is not yet handled.\n");
                 default:
                         assert(0 && "Invalid operation type.");

@@ -10,6 +10,7 @@ enum op_t {
         OP_POW = 5,
         OP_SIN = 6,
         OP_COS = 7,
+        OP_LN  = 8,
 };
 
 enum math_const_t {

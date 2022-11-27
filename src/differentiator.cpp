@@ -60,7 +60,8 @@ diff_parse(tree_t *tree)
 
         lexer(buffer, &tok_arr);
 
-        parse(tree, tok_arr.ptr, &tree->root);
+        int count = 0;
+        parse(tree, tok_arr.ptr, &tree->root, &count);
 
         free(tok_arr.ptr);
         include_graph(tree_graph_dump(tree, VAR_INFO(tree)));
@@ -73,114 +74,175 @@ diff_parse(tree_t *tree)
 static void
 diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+
         node_insert(diff, dpos, {DIFF_POISON, {}});
 
-        diff->nodes[*dpos].data = eq->nodes[*epos].data;
+        dn[*dpos].data = en[*epos].data;
 
-        if (eq->nodes[*epos].left != -1) {
-                diff_copy(eq, diff, &eq->nodes[*epos].left,
-                                &diff->nodes[*dpos].left);
-        }
-        if (eq->nodes[*epos].right != -1) {
-                diff_copy(eq, diff, &eq->nodes[*epos].right,
-                                &diff->nodes[*dpos].right);
-        }
+        if (en[*epos].left != -1) 
+                diff_copy(eq, diff, &en[*epos].left, &dn[*dpos].left);
+
+        if (en[*epos].right != -1)
+                diff_copy(eq, diff, &en[*epos].right, &dn[*dpos].right);
 }
 
 static void
 diff_take_mul(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
         diff->nodes[*dpos].data.val.op = OP_ADD;
 
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].left].data.val.op = OP_MUL;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, &dn[*dpos].left, tmp);
+        node_insert(diff, &dn[*dpos].right, tmp);
 
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_MUL;
+        diff_take(eq, diff, &en[*epos].left, &dn[dn[*dpos].left].left);
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*dpos].left].right);
 
-        diff_take(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].left].left);
-        diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].left].right);
-
-        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].left);
-        diff_copy(eq, diff, &eq->nodes[*epos].left, &diff->nodes[diff->nodes[*dpos].right].right);
+        diff_take(eq, diff, &en[*epos].right, &dn[dn[*dpos].right].left);
+        diff_copy(eq, diff, &en[*epos].left, &dn[dn[*dpos].right].right);
 }
 
 static void
 diff_take_div(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
         diff->nodes[*dpos].data.val.op = OP_DIV;
 
         // Left subtree.
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
-        diff_take_mul(eq, diff, epos, &diff->nodes[*dpos].left);
-        diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].left].data.val.op = OP_SUB;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_SUB}};
+        node_insert(diff, &dn[*dpos].left, tmp);
+        diff_take_mul(eq, diff, epos, &dn[*dpos].left);
 
         // Right subtree.
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_POW;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_POW}};
+        node_insert(diff, &dn[*dpos].right, tmp);
 
-        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.type = DIFF_NUM;
-        diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.val.num = 2;
+        tmp = {.type = DIFF_NUM, .val = {.num = 2}};
+        node_insert(diff, &dn[dn[*dpos].right].right, tmp);
 
-        diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].left);
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*dpos].right].left);
 }
 
 static void
 diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
-        diff->nodes[*dpos].data.val.op = OP_MUL;
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+        double tmp_num = 0;
 
-        node_insert(diff, &diff->nodes[*dpos].left, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].left].data.type = DIFF_NUM;
-        diff->nodes[diff->nodes[*dpos].left].data.val.num =
-                eq->nodes[eq->nodes[*epos].right].data.val.num;
+        dn[*dpos].data.val.op = OP_MUL;
 
-        // Power (x)^(a-1).
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_POW;
+        // Derivative of function in power.
+        diff_take(eq, diff, &en[*epos].left, &dn[*dpos].left);
 
-        // (x)
-        diff_copy(eq, diff, &eq->nodes[*epos].left,
-                        &diff->nodes[diff->nodes[*dpos].right].left);
+        // Derivative of power.
+        int *tpos = &dn[*dpos].right;
 
-        // (a-1).
-        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].data.val.op = OP_SUB;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, tpos, tmp);
 
-        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left].data.type = DIFF_NUM;
-        diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].left].data.val.num =
-                eq->nodes[eq->nodes[*epos].right].data.val.num;
+        tmp_num = en[en[*epos].right].data.val.num;
+        tmp = {.type = DIFF_NUM, .val = {.num = tmp_num}};
+        node_insert(diff, &dn[*tpos].left, tmp);
 
-        node_insert(diff, &diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right].data.type = DIFF_NUM;
-        diff->nodes[diff->nodes[diff->nodes[diff->nodes[*dpos].right].right].right].data.val.num = 1;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_POW}};
+        node_insert(diff, &dn[*tpos].right, tmp);
+
+        diff_copy(eq, diff, &en[*epos].left,
+                        &dn[dn[*tpos].right].left);
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_SUB}};
+        node_insert(diff, &dn[dn[*tpos].right].right, tmp);
+
+        tmp = {.type = DIFF_NUM, .val = {.num = tmp_num}};
+        node_insert(diff, &dn[dn[dn[*tpos].right].right].left, tmp);
+
+        tmp = {.type = DIFF_NUM, .val = {.num = 1}};
+        node_insert(diff, &dn[dn[dn[*tpos].right].right].right, tmp);
 }
 
 static void
 diff_take_sin(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
         diff->nodes[*dpos].data.val.op = OP_MUL;
       
         // Left subtree.
-        diff_take(eq, diff, &eq->nodes[*epos].right, &diff->nodes[*dpos].left);
+        diff_take(eq, diff, &eq->nodes[*epos].right, &dn[*dpos].left);
 
         // Right subtree.
-        node_insert(diff, &diff->nodes[*dpos].right, {DIFF_POISON, {}});
-        diff->nodes[diff->nodes[*dpos].right].data.type = DIFF_OP;
-        diff->nodes[diff->nodes[*dpos].right].data.val.op = OP_COS;
+        tmp = {.type = DIFF_OP, .val = {.op = OP_COS}};
+        node_insert(diff, &dn[*dpos].right, tmp);
 
-        diff_copy(eq, diff, &eq->nodes[*epos].right, &diff->nodes[diff->nodes[*dpos].right].right);
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*dpos].right].right);
 
         // No left child for trigonometric functions.
-        node_insert(diff, &diff->nodes[diff->nodes[*dpos].right].left, {DIFF_POISON, {}});
+        node_insert(diff, &dn[dn[*dpos].right].left, {DIFF_POISON, {}});
+}
+
+static void
+diff_take_cos(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
+        diff->nodes[*dpos].data.val.op = OP_MUL;
+      
+        // Left subtree.
+        diff_take(eq, diff, &eq->nodes[*epos].right, &dn[*dpos].left);
+
+        // Right subtree.
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, &dn[*dpos].right, tmp);
+
+        int *tpos = &dn[*dpos].right;
+
+        tmp = {.type = DIFF_NUM, .val = {.num = -1}};
+        node_insert(diff, &dn[*tpos].left, tmp);
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_SIN}};
+        node_insert(diff, &dn[*tpos].right, tmp);
+
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*tpos].right].right);
+
+        // No left child for trigonometric functions.
+        node_insert(diff, &dn[dn[*tpos].right].left, {DIFF_POISON, {}});
+}
+
+static void
+diff_take_ln(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
+        diff->nodes[*dpos].data.val.op = OP_MUL;
+      
+        // Left subtree.
+        diff_take(eq, diff, &eq->nodes[*epos].right, &dn[*dpos].left);
+
+        // Right subtree.
+        tmp = {.type = DIFF_OP, .val = {.op = OP_DIV}};
+        node_insert(diff, &dn[*dpos].right, tmp);
+
+        tmp = {.type = DIFF_NUM, .val = {.num = 1}};
+        node_insert(diff, &dn[dn[*dpos].right].left, tmp);
+
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*dpos].right].right);
 }
 
 static int
@@ -227,8 +289,13 @@ diff_take_op(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
                         break;
                 case OP_COS:
+                        diff_take_cos(eq, diff, epos, dpos);
+
+                        break;
                 case OP_LN:
-                        assert(0 && "Operation is not yet handled.\n");
+                        diff_take_ln(eq, diff, epos, dpos);
+
+                        break;
                 default:
                         assert(0 && "Invalid operation type.");
                         break;

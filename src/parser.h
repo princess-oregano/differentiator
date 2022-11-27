@@ -12,7 +12,7 @@ enum par_err {
 
 // Builds tree from tokens.
 int
-parse(tree_t *tree, token_t *tokens, int *pos);
+parse(tree_t *tree, token_t *tokens, int *pos, int *count);
 
 #endif // PARSER_H
 

@@ -71,6 +71,7 @@ diff_parse(tree_t *tree)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Copies subtree to given destination.
 static void
 diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
@@ -86,6 +87,26 @@ diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
         if (en[*epos].right != -1)
                 diff_copy(eq, diff, &en[*epos].right, &dn[*dpos].right);
+}
+
+static bool
+diff_find(tree_t *eq, int *epos, diff_obj_type_t type)
+{
+        bool ret_val = false;
+
+        if (eq->nodes[*epos].data.type == type)
+                return true;
+
+        if (eq->nodes[*epos].left != -1) 
+                ret_val = diff_find(eq, &eq->nodes[*epos].left, type);
+
+        if (ret_val == true)
+                return ret_val;
+
+        if (eq->nodes[*epos].right != -1) 
+                ret_val = diff_find(eq, &eq->nodes[*epos].right, type);
+
+        return ret_val;
 }
 
 static void
@@ -133,7 +154,7 @@ diff_take_div(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 }
 
 static void
-diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+diff_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         tree_node_t *dn = diff->nodes;
         tree_node_t *en = eq->nodes;
@@ -151,9 +172,7 @@ diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
         node_insert(diff, tpos, tmp);
 
-        tmp_num = en[en[*epos].right].data.val.num;
-        tmp = {.type = DIFF_NUM, .val = {.num = tmp_num}};
-        node_insert(diff, &dn[*tpos].left, tmp);
+        diff_copy(eq, diff, &en[*epos].right, &dn[*tpos].left);
 
         tmp = {.type = DIFF_OP, .val = {.op = OP_POW}};
         node_insert(diff, &dn[*tpos].right, tmp);
@@ -167,8 +186,46 @@ diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         tmp = {.type = DIFF_NUM, .val = {.num = tmp_num}};
         node_insert(diff, &dn[dn[dn[*tpos].right].right].left, tmp);
 
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[dn[*tpos].right].right].left);
+
         tmp = {.type = DIFF_NUM, .val = {.num = 1}};
         node_insert(diff, &dn[dn[dn[*tpos].right].right].right, tmp);
+}
+
+static void
+diff_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+
+        int *tpos = &dn[*dpos].right;
+
+        diff_pow(eq, diff, epos, dpos);
+
+
+}
+
+static void
+diff_pow_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+
+}
+
+static void
+diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
+{
+        tree_node_t *en = eq->nodes;
+
+        if (diff_find(eq, &en[*epos].right, DIFF_VAR) == false) {
+                diff_pow(eq, diff, epos, dpos);
+        } else {
+                if (diff_find(eq, &en[*epos].left, DIFF_VAR) == false) {
+                        diff_exp(eq, diff, epos, dpos);
+                } else {
+                        diff_pow_exp(eq, diff, epos, dpos);
+                }
+        }
 }
 
 static void

@@ -15,6 +15,7 @@ lex_alloc(tok_arr_t *tok_arr, int cap)
         }
 
         token_t *tmp = nullptr;
+        fprintf(stderr, "cap = %d\n", cap);
         tmp = (token_t *) realloc(tok_arr->ptr, (size_t) cap * sizeof(token_t));
 
         if (tmp == nullptr) {
@@ -144,7 +145,7 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                 tok_count++;
                 i++;
 
-                if (tok_arr->cap > tok_count + 1) {
+                if (tok_arr->cap < tok_count + 1) {
                         lex_alloc(tok_arr, tok_arr->cap * 2);
                 }
 

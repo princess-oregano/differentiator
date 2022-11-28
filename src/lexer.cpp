@@ -15,7 +15,6 @@ lex_alloc(tok_arr_t *tok_arr, int cap)
         }
 
         token_t *tmp = nullptr;
-        fprintf(stderr, "cap = %d\n", cap);
         tmp = (token_t *) realloc(tok_arr->ptr, (size_t) cap * sizeof(token_t));
 
         if (tmp == nullptr) {

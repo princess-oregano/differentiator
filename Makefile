@@ -12,7 +12,7 @@ CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
 	    -Wchar-subscripts -Wconditionally-supported -Wconversion          \
 	    -Wctor-dtor-privacy -Wempty-body -Wfloat-equal                    \
 	    -Wformat-nonliteral -Wformat-security -Wformat-signedness         \
-	    -Wformat=2 -Winline -Wlarger-than=40000 -Wlogical-op              \
+	    -Wformat=2 -Winline -Wlarger-than=48000 -Wlogical-op              \
 	    -Wmissing-declarations -Wnon-virtual-dtor -Wopenmp-simd           \
 	    -Woverloaded-virtual -Wpacked -Wpointer-arith -Wredundant-decls   \
 	    -Wshadow -Wsign-conversion -Wsign-promo -Wstack-usage=8192        \

@@ -199,17 +199,67 @@ diff_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         tree_node_t *en = eq->nodes;
         tree_data_t tmp {};
 
+        dn[*dpos].data.val.op = OP_MUL;
+
+        diff_take(eq, diff, &en[*epos].right, &dn[*dpos].left);
+
         int *tpos = &dn[*dpos].right;
 
-        diff_pow(eq, diff, epos, dpos);
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, tpos, tmp);
 
+        diff_copy(eq, diff, epos, &dn[*tpos].right);
 
+        tmp = {.type = DIFF_OP, .val = {.op = OP_LN}};
+        node_insert(diff, &dn[*tpos].left, tmp);
+
+        node_insert(diff, &dn[dn[*tpos].left].left, {DIFF_POISON, {}});
+        
+        diff_copy(eq, diff, &en[*epos].left, &dn[dn[*tpos].left].right);
 }
 
 static void
 diff_pow_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
+        tree_node_t *dn = diff->nodes;
+        tree_node_t *en = eq->nodes;
+        tree_data_t tmp {};
+        int *tpos = nullptr;
 
+        dn[*dpos].data.val.op = OP_MUL;
+
+        diff_copy(eq, diff, epos, &dn[*dpos].left);
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_ADD}};
+        node_insert(diff, &dn[*dpos].right, tmp);
+
+        // Left subtree of '+' node.
+        tpos = &dn[dn[*dpos].right].left;
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, tpos, tmp);
+
+        diff_take(eq, diff, &en[*epos].right, &dn[*tpos].left);
+        
+        tmp = {.type = DIFF_OP, .val = {.op = OP_LN}};
+        node_insert(diff, &dn[*tpos].right, tmp);
+
+        node_insert(diff, &dn[dn[*tpos].right].left, {DIFF_POISON, {}});
+        diff_copy(eq, diff, &en[*epos].left, &dn[dn[*tpos].right].right);
+
+        // Right subtree of '+' node.
+        tpos = &dn[dn[*dpos].right].right;
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_DIV}};
+        node_insert(diff, tpos, tmp);
+
+        tmp = {.type = DIFF_OP, .val = {.op = OP_MUL}};
+        node_insert(diff, &dn[*tpos].left, tmp);
+
+        diff_copy(eq, diff, &en[*epos].right, &dn[dn[*tpos].left].right);
+        diff_take(eq, diff, &en[*epos].left, &dn[dn[*tpos].left].left);
+
+        diff_copy(eq, diff, &en[*epos].left, &dn[*tpos].right);
 }
 
 static void

@@ -116,7 +116,8 @@ op_node_graph_dump(tree_t *tree, int curr, int node_count)
                                 node_count, curr);
                         break;
                 default:
-                        log("Invalid type encountered.\n");
+                        log("Invalid type encountered: %d.\n", 
+                                        tree->nodes[curr].data.val.op);
                         assert(0 && "Invalid operation type encountered.");
                         break;
         }

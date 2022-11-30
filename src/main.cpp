@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "simplifier.h"
 #include "tree_dump.h"
 #include "log.h"
 #include "differentiator.h"
@@ -17,10 +18,9 @@ main()
 
         include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
 
-        diff_take(&eq, &diff, &eq.root, &diff.root);
+        sim_neutral(&eq, &eq.root);
 
         include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
-        include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
 
         tree_dtor(&eq);
         tree_dtor(&diff);

@@ -1,8 +1,6 @@
 #ifndef DIFF_H
 #define DIFF_H
 
-#include <stdio.h>
-#include <sys/stat.h>
 #include "tree.h"
 
 // Error codes.
@@ -14,12 +12,6 @@ enum diff_err_t {
         D_ERR_SYNTAX = 4,
         D_ERR_MAP = 5,
         D_ERR_EMPTY = 6,
-};
-
-// Structure to store information about file.
-struct file_t {
-        FILE  *stream = nullptr;
-        struct stat stats = {};
 };
 
 // Parses the contents from stream.

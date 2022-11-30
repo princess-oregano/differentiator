@@ -3,6 +3,7 @@
 #include "tree_dump.h"
 #include "log.h"
 #include "differentiator.h"
+#include "tex_dump.h"
 
 int
 main()
@@ -19,12 +20,12 @@ main()
         include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
 
         diff_take(&eq, &diff, &eq.root, &diff.root);
-        
         include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
 
         sim_eq(&diff, &diff.root);
-
         include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
+
+        tex_tree_dump(&diff, "tex");
 
         tree_dtor(&eq);
         tree_dtor(&diff);

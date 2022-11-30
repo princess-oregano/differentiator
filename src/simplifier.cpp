@@ -11,28 +11,6 @@ are_equal(double value1, double value2)
         return (fabs(value1 - value2) < THRESHOLD);
 }
 
-// Check if tree nodes have one given type(except operations).
-static bool
-sim_check(tree_t *eq, int *epos, diff_obj_type_t type)
-{
-        bool ret_val = false;
-
-        if (eq->nodes[*epos].data.type == type ||
-            eq->nodes[*epos].data.type == DIFF_OP)
-                return true;
-
-        if (eq->nodes[*epos].left != -1)
-                ret_val = sim_check(eq, &eq->nodes[*epos].left, type);
-
-        if (ret_val == false)
-                return ret_val;
-
-        if (eq->nodes[*epos].right != -1)
-                ret_val = sim_check(eq, &eq->nodes[*epos].right, type);
-
-        return ret_val;
-}
-
 void
 sim_const(tree_t *eq, int *pos)
 {

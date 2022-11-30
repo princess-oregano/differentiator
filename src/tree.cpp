@@ -82,7 +82,8 @@ node_bound(int *parent, int node)
 
         if (*parent != -1 && node != 0) {
                 log("Warning: pointer is already initialized.\n"
-                    "Bounding may lead to loss of data.\n");
+                    "Bounding may lead to loss of data.\n"
+                    "parent = %d, node = %d\n", *parent, node);
         }
 
         *parent = node;

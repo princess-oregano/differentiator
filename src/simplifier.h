@@ -14,10 +14,10 @@ void
 sim_eq(tree_t *eq, int *pos);
 // Performs convolution of constants.
 void
-sim_const(tree_t *eq, int *pos);
+sim_const(tree_t *eq, int *pos, bool *changed);
 // Removes neutral elements(like multiplying by 0, 1, etc.).
 void
-sim_neutral(tree_t *eq, int *pos);
+sim_neutral(tree_t *eq, int *pos, bool *changed);
 
 #endif // SIMPLIFIER_H
 

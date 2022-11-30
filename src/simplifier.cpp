@@ -12,7 +12,7 @@ are_equal(double value1, double value2)
 }
 
 void
-sim_const(tree_t *eq, int *pos)
+sim_const(tree_t *eq, int *pos, bool *changed)
 {
         tree_data_t tmp = {};
         double num = 0;
@@ -22,12 +22,12 @@ sim_const(tree_t *eq, int *pos)
         if (en[*pos].left == -1)
                 return;
                 
-        sim_const(eq, &en[*pos].left);
+        sim_const(eq, &en[*pos].left, changed);
 
         if (en[*pos].right == -1)
                 return;
         
-        sim_const(eq, &en[*pos].right);
+        sim_const(eq, &en[*pos].right, changed);
 
         if (en[en[*pos].left].data.type == DIFF_NUM &&
             en[en[*pos].right].data.type == DIFF_NUM) {
@@ -63,11 +63,13 @@ sim_const(tree_t *eq, int *pos)
                 tmp = {.type = DIFF_NUM, .val = {.num = num}};
                 node_remove(eq, pos);
                 node_insert(eq, pos, tmp);
+
+                *changed = true;
         }
 }
 
 static void
-sim_add_sub(tree_t *eq, int *pos)
+sim_add_sub(tree_t *eq, int *pos, bool *changed)
 {
         tree_node_t *en = eq->nodes;
 
@@ -75,18 +77,18 @@ sim_add_sub(tree_t *eq, int *pos)
         tree_data_t elem2 = en[en[*pos].right].data;
 
         if (elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].left);
                 node_bound(pos, en[*pos].right);
-        }
-
-        if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0)) {
+        } else if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].right);
                 node_bound(pos, en[*pos].left);
         }
 }
 
 static void
-sim_mul(tree_t *eq, int *pos)
+sim_mul(tree_t *eq, int *pos, bool *changed)
 {
         tree_node_t *en = eq->nodes;
         tree_data_t tmp = {};
@@ -96,24 +98,23 @@ sim_mul(tree_t *eq, int *pos)
 
         if ((elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0)) ||
             (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0))) {
+                *changed = true;
                 node_remove(eq, pos);
                 tmp = {.type = DIFF_NUM, .val = {.num = 0}};
                 node_insert(eq, pos, tmp);
-        }
-
-        if (elem1.type == DIFF_NUM && are_equal(elem1.val.num, 1)) {
+        } else if (elem1.type == DIFF_NUM && are_equal(elem1.val.num, 1)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].left);
                 node_bound(pos, en[*pos].right);
-        }
-
-        if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 1)) {
+        } else if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 1)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].right);
                 node_bound(pos, en[*pos].left);
         }
 }
 
 static void
-sim_div(tree_t *eq, int *pos)
+sim_div(tree_t *eq, int *pos, bool *changed)
 {
         tree_node_t *en = eq->nodes;
         tree_data_t tmp = {};
@@ -122,11 +123,11 @@ sim_div(tree_t *eq, int *pos)
         tree_data_t elem2 = en[en[*pos].right].data;
 
         if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 1)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].right);
                 node_bound(pos, en[*pos].left);
-        }
-
-        if ((elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0))) {
+        } else if ((elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0))) {
+                *changed = true;
                 node_remove(eq, pos);
                 tmp = {.type = DIFF_NUM, .val = {.num = 0}};
                 node_insert(eq, pos, tmp);
@@ -134,7 +135,7 @@ sim_div(tree_t *eq, int *pos)
 }
 
 static void
-sim_pow(tree_t *eq, int *pos)
+sim_pow(tree_t *eq, int *pos, bool *changed)
 {
         tree_node_t *en = eq->nodes;
         tree_data_t tmp = {};
@@ -143,57 +144,58 @@ sim_pow(tree_t *eq, int *pos)
         tree_data_t elem2 = en[en[*pos].right].data;
 
         if (elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0)) {
+                *changed = true;
                 node_remove(eq, pos);
                 tmp = {.type = DIFF_NUM, .val = {.num = 0}};
                 node_insert(eq, pos, tmp);
-        }
-
-        if ((elem1.type == DIFF_NUM && are_equal(elem1.val.num, 1))) {
+        } else if ((elem1.type == DIFF_NUM && are_equal(elem1.val.num, 1))) {
+                *changed = true;
                 node_remove(eq, pos);
                 tmp = {.type = DIFF_NUM, .val = {.num = 1}};
                 node_insert(eq, pos, tmp);
         }
         
         if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0)) {
+                *changed = true;
                 node_remove(eq, pos);
                 tmp = {.type = DIFF_NUM, .val = {.num = 1}};
                 node_insert(eq, pos, tmp);
-        }
-
-        if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 1)) {
+        } else if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 1)) {
+                *changed = true;
                 node_remove(eq, &en[*pos].right);
                 node_bound(pos, en[*pos].left);
         }
 }
 
 void
-sim_neutral(tree_t *eq, int *pos)
+sim_neutral(tree_t *eq, int *pos, bool *changed)
 {
+        bool changed_tmp = false;
         tree_node_t *en = eq->nodes;
 
         if (en[*pos].left == -1)
                 return;
                 
-        sim_neutral(eq, &en[*pos].left);
+        sim_neutral(eq, &en[*pos].left, changed);
 
         if (en[*pos].right == -1)
                 return;
         
-        sim_neutral(eq, &en[*pos].right);
+        sim_neutral(eq, &en[*pos].right, changed);
 
         switch (en[*pos].data.val.op) {
                 case OP_ADD:
                 case OP_SUB:
-                        sim_add_sub(eq, pos);
+                        sim_add_sub(eq, pos, &changed_tmp);
                         break;
                 case OP_MUL:
-                        sim_mul(eq, pos);
+                        sim_mul(eq, pos, &changed_tmp);
                         break;
                 case OP_DIV:
-                        sim_div(eq, pos);
+                        sim_div(eq, pos, &changed_tmp);
                         break;
                 case OP_POW:
-                        sim_pow(eq, pos);
+                        sim_pow(eq, pos, &changed_tmp);
                         break;
                 case OP_SIN:
                 case OP_COS:
@@ -204,5 +206,18 @@ sim_neutral(tree_t *eq, int *pos)
                         assert(0 && "Invalid operation type");
                         break;
         }
+
+        *changed |= changed_tmp;
 }
 
+void
+sim_eq(tree_t *eq, int *pos)
+{
+        bool changed = true;
+
+        while (changed) {
+                changed = false;
+                sim_const(eq, pos, &changed);
+                sim_neutral(eq, pos, &changed);
+        }
+}

@@ -18,9 +18,13 @@ main()
 
         include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
 
-        sim_neutral(&eq, &eq.root);
+        diff_take(&eq, &diff, &eq.root, &diff.root);
+        
+        include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
 
-        include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
+        sim_eq(&diff, &diff.root);
+
+        include_graph(tree_graph_dump(&diff, VAR_INFO(diff)));
 
         tree_dtor(&eq);
         tree_dtor(&diff);

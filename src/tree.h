@@ -13,6 +13,7 @@ enum tree_error_t {
 struct tree_data_t {
         diff_obj_type_t type = DIFF_POISON;
         value_t val = {};
+        bool copy = false;
 };
 
 struct tree_node_t {

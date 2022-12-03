@@ -8,6 +8,7 @@
 struct file_t {
         FILE  *stream = nullptr;
         struct stat stats = {};
+        const char *filename = nullptr;
 };
 
 // Error codes.

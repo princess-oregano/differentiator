@@ -18,6 +18,8 @@ get_file(const char *filename, file_t *file, const char *mode)
                 return F_ERR_STATS;
         }
 
+        file->filename = filename;
+
         return F_ERR_STATS;
 }
 

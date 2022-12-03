@@ -1,28 +1,89 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 #include "tex_dump.h"
+#include "system.h"
 #include "log.h"
+
+static FILE *TEX_STREAM = nullptr;
+static const char *TEX_FILENAME = nullptr;
+static const char *PHRASE[] = {
+        "Чурбанов сказал, что",
+        "Бог умер, и на его надгробии написано следующее",
+        "Интересный факт: если Вы достаточно забавный, то Яворский съест Вас \
+последним, и у Вас будет время кровью погибших кОлЛеГ записать, что",
+        "Тут, очевидно, у любого возникли бы затруднения. Мы постараемся их \
+измежать применив хитроумный ход, который, к сожалению, почти никогда не \
+применяется семинаристами. На данном этапе взятия производной нам необходимо \
+собраться силами. После данного приема возможны: тремор в руках, ощущение \
+сильного алгольного опьянения, исключение из физтеха для студентов и \
+немедленное увольнение с кафедры высшей математики для семинаристов. Сделаем \
+следующее: перерыв на семинаре",
+        "На первый взгляд, задача тривиальная, но есть нюанс. Впрочем, \
+это не помешает нам вызвать к доске рандомного учащегося, который с легкостью \
+запишет следующее",
+        "Если на данном этапе кажется, что можно пропустить несколько шагов \
+то не следует поддаваться соблазну. Следующее преобразование далеко не такое \
+очевидно, как может показаться, и к нему следует отнестись со всей \
+серьезностью",
+        "Пусть нас не волнует Чурбанов, но переживать за его моральное \
+состояние после такого все же стоит",
+        "Иногда авторка мечтает, чтобы ее семинарист хоть решал задачи хоть \
+немного подробнее, чем просто \"Ну... В общем, да, оно так будет. Ответ \
+правильный, садитес.\"",
+        "Саша Таранов готовит вкусные блинчики. Пока авторка их ела, \
+производная взялась сама собой",
+        "На данном этапе следует сказать учащимся, что они все молодцы, и \
+вообще они солнышки. К сожалению, не каждому даются такие сложности, \
+поэтому не стоит себя перенапрягать. Можно просто перейти к следующему \
+действию",
+        "Чурбанов...",
+        "Интересный факт: в данной программе заготовлено около $20$ разных \
+фраз, тогда вероятность выпадения этой конкретной фразы составляет порядка \
+$5\\%$. Для сравнения, $3\\%$ жителей России на данный момент болеют раком",
+        "Вас никогда не интересовало, почему нельзя переводиться у \
+семинаристов по матану? Меня вот приговорили к году Чурбанова и я хочу \
+аппелировать. Впрочем, не об этом",
+        "Чтобы следующий этап показался более, чем легким, достаточно успеть \
+к началу семинара, в крайнем случае, опаздать не более, чем на полчаса. Вообще \
+достаточно в принципе проводить семинар, да, Дмитрий Владимирович?",
+        "Прикол: мой семер потерял работы с семестровой",
+        "Дай бог здоровья каждому, кто это читает...",
+        "Однажды Чурбанов ехал со своей женой в маршрутке, и жена его \
+спросила: <<Дорогой, а почему никогда не снимаешь кольцо, даже когда \
+спишь?>>. Чурбанов ответил: <<Ну... Вот так вот... Да... Кто следующий \
+по списку?>>. С женой плакала половина маршрутки",
+        "Регулярная п-п-п-п-прецессия",
+        "",
+        "",
+        "",
+};
+static const char *SIM_PHRASE = 
+        "Наконец, мы подошли к упрощению выращения. Очевидно, что самая \
+сложная часть заключается в аккуратном подведении студентов к правильному \
+ответу, так как велика вероятность глупо ошибиться: пропустить минус, \
+поставить лишнюю двойку, приравнять $3^3$ к $9$ и др. Поэтому сейчас мы \
+воспользуемся техникой решения задач Дедиса Денкова, который всем \
+известен за свою порой даже излишнюю подробность. В связи с этим \
+последующие вычисления авторка не видит смысла даже комментировать: ну очев \
+все понятно, где непонятно-то? Все видно же ну че ты ноеш халява жеж";
+static const char *EQ_PHRASE = 
+        "Для примера рассмотрим следующую функцию, которая потребует нашего \
+тщательнейшего рассмотрения:";
 
 static bool
 check_leaf(tree_t *tree, int *pos)
 {
-        fprintf(stderr, "left = %d, right = %d\n", tree->nodes[*pos].left, tree->nodes[*pos].right);
-
-        if (tree->nodes[*pos].left == -1 && tree->nodes[*pos].right == -1)
-                return false;
-        else
-                return true;
+        return (tree->nodes[*pos].left != -1 && tree->nodes[*pos].right != -1);
 }
 
 static bool
 check_add_sub(tree_t *tree, int *pos)
 {
-        if (tree->nodes[*pos].data.type == DIFF_OP &&
-           (tree->nodes[*pos].data.val.op == OP_ADD ||
-            tree->nodes[*pos].data.val.op == OP_SUB))
-                return true;
-        else
-                return false;
+        return (tree->nodes[*pos].data.type == DIFF_OP &&
+               (tree->nodes[*pos].data.val.op == OP_ADD ||
+                tree->nodes[*pos].data.val.op == OP_SUB));
 }
 
 static void
@@ -48,10 +109,10 @@ tex_brace(tree_t *eq, int *pos, FILE *stream, bool (*check)(tree_t *, int *))
         bool brace = check(eq, pos);
 
         if (brace)
-                fprintf(stream, "(");
+                fprintf(stream, " \\left(");
         tex_subtree(eq, pos, stream);
         if (brace)
-                fprintf(stream, ")");
+                fprintf(stream, " \\right)");
 }
 
 static void
@@ -90,19 +151,19 @@ tex_op(tree_t *eq, int *pos, FILE *stream)
                         fprintf(stream, "}");
                         break;
                 case OP_SIN:
-                        fprintf(stream, " sin(");
+                        fprintf(stream, " \\sin \\left(");
                         tex_subtree(eq, &en[*pos].right, stream);
-                        fprintf(stream, ")");
+                        fprintf(stream, " \\right)");
                         break;
                 case OP_COS:
-                        fprintf(stream, " cos(");
+                        fprintf(stream, " \\cos \\left(");
                         tex_subtree(eq, &en[*pos].right, stream);
-                        fprintf(stream, ")");
+                        fprintf(stream, " \\right)");
                         break;
                 case OP_LN:
-                        fprintf(stream, " ln(");
+                        fprintf(stream, " \\ln \\left(");
                         tex_subtree(eq, &en[*pos].right, stream);
-                        fprintf(stream, ")");
+                        fprintf(stream, " \\right)");
                         break;
                 default:
                         log("Invalid operation type encountered.\n");
@@ -115,6 +176,8 @@ void
 tex_subtree(tree_t *eq, int *pos, FILE *stream)
 {
         tree_data_t data = eq->nodes[*pos].data;
+        if (data.copy == true)
+                fprintf(stream, " {\\left(");
         switch (data.type) {
                 case DIFF_POISON:
                         log("Invalid data type encountered.\n");
@@ -124,7 +187,11 @@ tex_subtree(tree_t *eq, int *pos, FILE *stream)
                         fprintf(stream, "%c", data.val.var);
                         break;
                 case DIFF_NUM:
-                        fprintf(stream, "%lg", data.val.num);
+                        if (eq->nodes[*pos].data.val.num < 0)
+                                fprintf(stream, " \\left(");
+                        fprintf(stream, "%lg\n", data.val.num);
+                        if (eq->nodes[*pos].data.val.num < 0)
+                                fprintf(stream, " \\right)");
                         break;
                 case DIFF_CONST:
                         tex_const(eq, pos, stream);
@@ -135,18 +202,112 @@ tex_subtree(tree_t *eq, int *pos, FILE *stream)
                 default:
                         break;
         }
+
+        if (data.copy == true)
+                fprintf(stream, " \\right)'}_{\\!x}");
+}
+
+static void
+tex_intro()
+{
+        fprintf(TEX_STREAM, 
+                "\\begin{titlepage}\n"
+                "	\\centering\n"
+                "	\\vspace*{5 cm}\n"
+                "	\n"
+                "	\\huge\\bfseries\n"
+                "	Подробное решение задач на семинарах по дисциплине <<Математический анализ>>\n"
+                "	\n"
+                "	\\vspace*{0.5cm}\n"
+                "	\n"
+                "	\\large Кулевич Анастасия \\\\ РТРТРТРТРТРТРТ\n"
+                "	\n"
+                "	\\vspace*{0.5cm}\n"
+                "	\\large 31.02.2077\n"
+                "	\n"
+                "	\\vspace*{\\fill}\n"
+                "\\end{titlepage}\n"
+                "\\section{Введение}\n"
+                "\n"
+                "Каждый читатель, наверное, не раз встречался со следующей \
+проблемой: классический семинар по математическому анализу представляет из \
+себя краткое теор. введение и несколько часов сладкого бота задач о героиновых \
+шлюхах. И к сожалению, очень часто семинарист по каким-либо(разумеется, \
+уважительным) причинам (напр. нехватка времени, желание собственноручно \
+расчленить студентов, фамилия Чурбанов и др.) опускают многие важные моменты \
+при решении задач.\n\n"
+
+"Данная статья призывает каждого семинариста по мат. анализу не опускать \
+никаких деталей в решении на примере взятия производной. По скромному мнению \
+авторки, именно так должна находиться любая производная сложной функции, \
+рассматриваемая на семинаре.\n\n"
+
+"Посвящается лучшему семинаристу на свете, Чурбанову Дмитрию Владимировичу.\n\n"
+
+"\\section{Взятие производной}\n\n");
+
+}
+
+void
+tex_begin(const char *filename)
+{
+        srand((unsigned int) time(NULL));
+
+        TEX_FILENAME = filename;
+        TEX_STREAM = fopen(TEX_FILENAME, "w");
+
+        setvbuf(TEX_STREAM, nullptr, _IONBF, 0);
+
+        fprintf(TEX_STREAM, 
+                "\\documentclass[12pt,a4paper]{article}\n"
+                "\\usepackage[a4paper,top=1.5cm, bottom=1.5cm, left=1.5cm, right=1.5cm]{geometry}\n"
+                "\\usepackage[T2A]{fontenc}\n"
+                "\\usepackage[utf8]{inputenc}\n"
+                "\\usepackage[russian]{babel}\n"
+                "\\usepackage{amsmath}\n"
+                "\\usepackage{amssymb}\n\n");
+
+        fprintf(TEX_STREAM, "\\begin{document}\n\n");
+
+        tex_intro();
+}
+
+void
+tex_end()
+{
+        fprintf(TEX_STREAM, "\\end{document}\n");
+        
+        system_wformat("pdflatex -synctex=1 -interaction=nonstopmode "
+                       "-interaction=batchmode %s", TEX_FILENAME);
+
+        fclose(TEX_STREAM);
+}
+
+void
+tex_eq_dump(tree_t *eq)
+{
+        fprintf(TEX_STREAM, "%s\n", EQ_PHRASE);
+        fprintf(TEX_STREAM, "\\[ \n f(x) = ");
+        tex_subtree(eq, &eq->root, TEX_STREAM);
+        fprintf(TEX_STREAM, "\\]\n");
+}
+
+void
+tex_sim_dump(tree_t *eq)
+{
+        fprintf(TEX_STREAM, "%s\n", SIM_PHRASE);
+        fprintf(TEX_STREAM, "\\[ \n f'(x) = ");
+        tex_subtree(eq, &eq->root, TEX_STREAM);
+        fprintf(TEX_STREAM, "\\]\n");
 }
 
 void 
-tex_tree_dump(tree_t *eq, const char *filename)
+tex_diff_dump(tree_t *eq)
 {
-        file_t file {};
-        get_file(filename, &file, "w");
-
-        setvbuf(file.stream, nullptr, _IONBF, 0);
-
-        tex_subtree(eq, &eq->root, file.stream);
-
-        fclose(file.stream);
+        size_t curr = (size_t) rand() % (sizeof(PHRASE) / sizeof(char *));
+        fprintf(TEX_STREAM, "%s\n", PHRASE[curr]);
+        fprintf(TEX_STREAM, "\\[ \n f'(x) = ");
+        tex_subtree(eq, &eq->root, TEX_STREAM);
+        fprintf(TEX_STREAM, "\\]\n");
 }
 

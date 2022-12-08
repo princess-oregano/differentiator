@@ -18,7 +18,7 @@ lex_alloc(tok_arr_t *tok_arr, int cap)
         tmp = (token_t *) realloc(tok_arr->ptr, (size_t) cap * sizeof(token_t));
 
         if (tmp == nullptr) {
-                log("Couldn't allocate momry for tokens.\n");
+                log("Couldn't allocate memory for tokens.\n");
                 return LEX_ALLOC;
         }
 

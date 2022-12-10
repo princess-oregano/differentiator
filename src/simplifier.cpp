@@ -69,7 +69,7 @@ sim_const(tree_t *eq, int *pos, bool *changed)
 }
 
 static void
-sim_add_sub(tree_t *eq, int *pos, bool *changed)
+sim_add(tree_t *eq, int *pos, bool *changed)
 {
         tree_node_t *en = eq->nodes;
 
@@ -80,6 +80,26 @@ sim_add_sub(tree_t *eq, int *pos, bool *changed)
                 *changed = true;
                 node_remove(eq, &en[*pos].left);
                 node_bound(pos, en[*pos].right);
+        } else if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0)) {
+                *changed = true;
+                node_remove(eq, &en[*pos].right);
+                node_bound(pos, en[*pos].left);
+        }
+}
+
+static void
+sim_sub(tree_t *eq, int *pos, bool *changed)
+{
+        tree_node_t *en = eq->nodes;
+
+        tree_data_t elem1 = en[en[*pos].left].data;
+        tree_data_t elem2 = en[en[*pos].right].data;
+
+        if (elem1.type == DIFF_NUM && are_equal(elem1.val.num, 0)) {
+                *changed = true;
+                node_remove(eq, &en[*pos].left);
+                node_insert(eq, &en[*pos].left, {.type = DIFF_NUM, .val = {.num = -1}});
+                eq->nodes[*pos].data.val.op = OP_MUL;
         } else if (elem2.type == DIFF_NUM && are_equal(elem2.val.num, 0)) {
                 *changed = true;
                 node_remove(eq, &en[*pos].right);
@@ -185,8 +205,10 @@ sim_neutral(tree_t *eq, int *pos, bool *changed)
 
         switch (en[*pos].data.val.op) {
                 case OP_ADD:
+                        sim_add(eq, pos, &changed_tmp);
+                        break;
                 case OP_SUB:
-                        sim_add_sub(eq, pos, &changed_tmp);
+                        sim_sub(eq, pos, &changed_tmp);
                         break;
                 case OP_MUL:
                         sim_mul(eq, pos, &changed_tmp);

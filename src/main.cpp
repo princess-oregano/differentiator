@@ -4,19 +4,30 @@
 #include "log.h"
 #include "differentiator.h"
 #include "tex_dump.h"
+#include "args.h"
 
 int
-main()
+main(int argc, char *argv[])
 {
         open_log("log.html");
-        tex_begin("dump.tex");
+
+        params_t params {};
+        process_args(argc, argv, &params);
 
         tree_t eq {};
         tree_t diff {};
         tree_ctor(&eq, 100);
         tree_ctor(&diff, 100);
 
-        diff_parse(&eq);
+        file_t file {};
+        char *buffer = nullptr;
+        get_file(params.src_filename, &file, "r");
+        if (read_file(&buffer, &file) == ERR_ALLOC)
+                return ERR_ALLOC;
+
+        diff_parse(&eq, buffer, params.verbose);
+
+        tex_begin("dump.tex");
 
         include_graph(tree_graph_dump(&eq, VAR_INFO(eq)));
         tex_eq_dump(&eq);

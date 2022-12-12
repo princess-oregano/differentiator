@@ -1,7 +1,7 @@
 SRCDIR := src
 OBJDIR := obj
 
-SRC := main.cpp differentiator.cpp tree.cpp tree_dump.cpp file.cpp \
+SRC := main.cpp differentiator.cpp tree.cpp tree_dump.cpp file.cpp args.cpp \
        system.cpp log.cpp lexer.cpp parser.cpp simplifier.cpp tex_dump.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
 TARGET := differentiator
@@ -54,7 +54,7 @@ all: out run
 
 run:
 	printf "%s\n" "Running..."
-	./$(TARGET)
+	./$(TARGET) -i test
 	printf "%s\n" "Finished."
 
 out: $(OBJDIR) $(OBJ)

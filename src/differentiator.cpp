@@ -9,6 +9,7 @@
 #include "tex_dump.h"
 #include "log.h"
 #include "types.h"
+#include "args.h"
 
 // Left/right subtrees.
 #define DL(arg) diff->nodes[arg].left
@@ -28,14 +29,9 @@
 #define OP(n) {.type = DIFF_OP, .val = {.op = OP_##n}}
 
 int
-diff_parse(tree_t *tree)
+diff_parse(tree_t *tree, char *buffer, bool verbose)
 {
-        file_t file {};
-        char *buffer = nullptr;
         tok_arr_t tok_arr {};
-
-        get_file("test", &file, "r");
-        read_file(&buffer, &file);
 
         lexer(buffer, &tok_arr);
 
@@ -226,8 +222,6 @@ diff_pow_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 static void
 diff_take_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
-        tree_node_t *en = eq->nodes;
-
         if (diff_find(eq, &ER(*epos), DIFF_VAR) == false) {
                 diff_pow(eq, diff, epos, dpos);
         } else {

@@ -2,6 +2,7 @@
 #define DIFF_H
 
 #include "tree.h"
+#include "args.h"
 
 // Error codes.
 enum diff_err_t {
@@ -16,7 +17,7 @@ enum diff_err_t {
 
 // Parses the contents from stream.
 int
-diff_parse(tree_t *tree);
+diff_parse(tree_t *tree, char *buffer, bool verbose);
 // Takes a derivative of function built from tree.
 int
 diff_take(tree_t *eq, tree_t *diff, int *epos, int *dpos);

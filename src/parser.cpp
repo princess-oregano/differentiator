@@ -15,10 +15,10 @@ parse_subtree(tree_t *tree, token_t *tokens, int *pos, int *count)
 
         // Some operations have only one arg, so their
         // left child is initialized with void.
-        if (tokens[*count].type == DIFF_OP && // FOR WHAT REASON GODS CREATED SWITCH IF U R USN THS FKN IFFFFFFFFFFFFFFFFFFFFFFFFFF 
-            (tokens[*count].val.op == OP_SIN ||
-             tokens[*count].val.op == OP_COS ||
-             tokens[*count].val.op == OP_LN)) {
+        if (tokens[*count].type == DIFF_OP &&
+           (tokens[*count].val.op == OP_SIN ||
+            tokens[*count].val.op == OP_COS ||
+            tokens[*count].val.op == OP_LN)) {
                 node_insert(tree, &tree->nodes[*pos].left, {DIFF_POISON, 0});
         } else {
                 parse(tree, tokens, &tree->nodes[*pos].left, count);

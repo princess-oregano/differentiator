@@ -7,7 +7,7 @@
 #include "log.h"
 
 static replace_t REPLACE {};
-const int REPL_WEIGHT = 45;
+const int REPL_WEIGHT = 20;
 static FILE *TEX_STREAM = nullptr;
 static const char *TEX_FILENAME = nullptr;
 static const char *PHRASE[] = {
@@ -85,20 +85,34 @@ check_add_sub(tree_t *tree, int *pos)
                 tree->nodes[*pos].data.val.op == OP_SUB));
 }
 
-static void
-tex_find_weight(tree_t *eq, int *pos, int *len)
+#define IS_OP(NAME) (eq->nodes[*pos].data.type == DIFF_OP && \
+                        eq->nodes[*pos].data.val.op == OP_##NAME)
+
+static int
+tex_find_weight(tree_t *eq, int *pos)
 {
-        if (*pos == -1) 
-                return;
-        
-        (*len)++;
+        int len1 = 0; 
+        int len2 = 0;
 
+        if (*pos == -1)
+                return 1;
         if (eq->nodes[*pos].data.replace == true) 
-                return;
+                return 1;
 
+        len1 += tex_find_weight(eq, &eq->nodes[*pos].left);
+        len2 += tex_find_weight(eq, &eq->nodes[*pos].right);
 
-        tex_find_weight(eq, &eq->nodes[*pos].left, len);
-        tex_find_weight(eq, &eq->nodes[*pos].right, len);
+        if (IS_OP(DIV)) {
+                if (len1 >= len2)
+                        len2 = 0;
+                else 
+                        len1 = 0;
+        }
+        if (IS_OP(POW)){
+                len2 *= 0.3;
+        }
+
+        return len1 + len2;
 }
 
 static void
@@ -212,15 +226,16 @@ tex_subtree(tree_t *eq, int *pos, bool repl, FILE *stream)
         tree_data_t data = eq->nodes[*pos].data;
 
         int len = 0;
+
         if (!repl) {
-                tex_find_weight(eq, pos, &len);
+                len = tex_find_weight(eq, pos);
                 if (len > REPL_WEIGHT && *pos != eq->root) {
                         make_replace(pos);
                         eq->nodes[*pos].data.replace = true;
                 }
 
                 if (eq->nodes[*pos].data.replace) {
-                        fprintf(stream, " %c ", REPLACE.sub[find_replace(*pos) - 1].letter);
+                        fprintf(stream, " %c ", REPLACE.sub[find_replace(*pos)].letter);
                         return;
                 }
         }
@@ -341,6 +356,7 @@ tex_replace(tree_t *eq)
                 fprintf(TEX_STREAM, "$%c = ", REPLACE.sub[i].letter);
                 tex_subtree(eq, &REPLACE.sub[i].subtree, true, TEX_STREAM);
                 fprintf(TEX_STREAM, "$,");
+                fprintf(TEX_STREAM, "\n\n");
         }
 }
 

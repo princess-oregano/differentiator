@@ -17,7 +17,7 @@ main(int argc, char *argv[])
         tree_t eq {};
         tree_t diff {};
         tree_ctor(&eq, 100);
-        tree_ctor(&diff, 100);
+        tree_ctor(&diff, 200);
 
         file_t file {};
         char *buffer = nullptr;
@@ -25,7 +25,7 @@ main(int argc, char *argv[])
         if (read_file(&buffer, &file) == ERR_ALLOC)
                 return ERR_ALLOC;
 
-        diff_parse(&eq, buffer, params.verbose);
+        diff_parse(&eq, buffer);
 
         tex_begin("dump.tex");
 
@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 
         tree_dtor(&eq);
         tree_dtor(&diff);
-
+        fclose(file.stream);
         tex_end();
 
         return 0;

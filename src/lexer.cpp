@@ -83,7 +83,10 @@ lexer(char *buffer, tok_arr_t *tok_arr)
         assert(buffer);
         assert(tok_arr);
 
-        lex_alloc(tok_arr, 100);
+        int err = 0;
+
+        if ((err = lex_alloc(tok_arr, 100)) != LEX_NO_ERR)
+                return err;
 
         int i = 0;
         ssize_t lex_ret = 0;
@@ -145,7 +148,9 @@ lexer(char *buffer, tok_arr_t *tok_arr)
                 i++;
 
                 if (tok_arr->cap < tok_count + 1) {
-                        lex_alloc(tok_arr, tok_arr->cap * 2);
+                        if ((err = lex_alloc(tok_arr, tok_arr->cap * 2)) !=
+                                        LEX_NO_ERR)
+                                return err;
                 }
 
         }

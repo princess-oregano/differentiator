@@ -54,7 +54,7 @@ all: out run
 
 run:
 	printf "%s\n" "Running..."
-	./$(TARGET) -i test
+	./$(TARGET) -i test -o dump.tex
 	printf "%s\n" "Finished."
 
 out: $(OBJDIR) $(OBJ)

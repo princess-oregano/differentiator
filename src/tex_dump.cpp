@@ -6,6 +6,8 @@
 #include "system.h"
 #include "log.h"
 
+static replace_t REPLACE {};
+const int REPL_WEIGHT = 45;
 static FILE *TEX_STREAM = nullptr;
 static const char *TEX_FILENAME = nullptr;
 static const char *PHRASE[] = {
@@ -55,9 +57,6 @@ $5\\%$. Для сравнения, $3\\%$ жителей России на да�
 спишь?>>. Чурбанов ответил: <<Ну... Вот так вот... Да... Кто следующий \
 по списку?>>. С женой плакала половина маршрутки",
         "Регулярная п-п-п-п-прецессия",
-        "",
-        "",
-        "",
 };
 static const char *SIM_PHRASE = 
         "Наконец, мы подошли к упрощению выращения. Очевидно, что самая \
@@ -87,6 +86,22 @@ check_add_sub(tree_t *tree, int *pos)
 }
 
 static void
+tex_find_weight(tree_t *eq, int *pos, int *len)
+{
+        if (*pos == -1) 
+                return;
+        
+        (*len)++;
+
+        if (eq->nodes[*pos].data.replace == true) 
+                return;
+
+
+        tex_find_weight(eq, &eq->nodes[*pos].left, len);
+        tex_find_weight(eq, &eq->nodes[*pos].right, len);
+}
+
+static void
 tex_const(tree_t *eq, int *pos, FILE *stream)
 {
         switch (eq->nodes[*pos].data.val.m_const) {
@@ -104,65 +119,66 @@ tex_const(tree_t *eq, int *pos, FILE *stream)
 }
 
 static void
-tex_brace(tree_t *eq, int *pos, FILE *stream, bool (*check)(tree_t *, int *))
+tex_brace(tree_t *eq, int *pos, bool repl, 
+          FILE *stream, bool (*check)(tree_t *, int *))
 {
         bool brace = check(eq, pos);
 
         if (brace)
                 fprintf(stream, " \\left(");
-        tex_subtree(eq, pos, stream);
+        tex_subtree(eq, pos, repl, stream);
         if (brace)
                 fprintf(stream, " \\right)");
 }
 
 static void
-tex_op(tree_t *eq, int *pos, FILE *stream)
+tex_op(tree_t *eq, int *pos, bool repl, FILE *stream)
 {
         tree_node_t *en = eq->nodes;
 
         switch (eq->nodes[*pos].data.val.op) {
                 case OP_ADD:
-                        tex_brace(eq, &en[*pos].left, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].left, repl, stream, check_add_sub);
                         fprintf(stream, " + ");
-                        tex_brace(eq, &en[*pos].right, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].right, repl, stream, check_add_sub);
                         break;
                 case OP_SUB:
-                        tex_brace(eq, &en[*pos].left, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].left, repl, stream, check_add_sub);
                         fprintf(stream, " - ");
-                        tex_brace(eq, &en[*pos].right, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].right, repl, stream, check_add_sub);
                         break;
                 case OP_MUL:
-                        tex_brace(eq, &en[*pos].left, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].left, repl, stream, check_add_sub);
                         fprintf(stream, " \\cdot ");
-                        tex_brace(eq, &en[*pos].right, stream, check_add_sub);
+                        tex_brace(eq, &en[*pos].right, repl, stream, check_add_sub);
                         break;
                 case OP_DIV:
                         fprintf(stream, " \\dfrac{");
-                        tex_subtree(eq, &en[*pos].left, stream);
+                        tex_subtree(eq, &en[*pos].left, repl, stream);
                         fprintf(stream, "}{");
-                        tex_subtree(eq, &en[*pos].right, stream);
+                        tex_subtree(eq, &en[*pos].right, repl, stream);
                         fprintf(stream, "} ");
                         break;
                 case OP_POW:
                         fprintf(stream, "{");
-                        tex_brace(eq, &en[*pos].left, stream, check_leaf);
+                        tex_brace(eq, &en[*pos].left, repl, stream, check_leaf);
                         fprintf(stream, "}^{");
-                        tex_subtree(eq, &en[*pos].right, stream);
+                        tex_subtree(eq, &en[*pos].right, repl, stream);
                         fprintf(stream, "}");
                         break;
                 case OP_SIN:
                         fprintf(stream, " \\sin \\left(");
-                        tex_subtree(eq, &en[*pos].right, stream);
+                        tex_subtree(eq, &en[*pos].right, repl, stream);
                         fprintf(stream, " \\right)");
                         break;
                 case OP_COS:
                         fprintf(stream, " \\cos \\left(");
-                        tex_subtree(eq, &en[*pos].right, stream);
+                        tex_subtree(eq, &en[*pos].right, repl, stream);
                         fprintf(stream, " \\right)");
                         break;
                 case OP_LN:
                         fprintf(stream, " \\ln \\left(");
-                        tex_subtree(eq, &en[*pos].right, stream);
+                        tex_subtree(eq, &en[*pos].right, repl, stream);
                         fprintf(stream, " \\right)");
                         break;
                 default:
@@ -172,10 +188,43 @@ tex_op(tree_t *eq, int *pos, FILE *stream)
         }
 }
 
+static int
+find_replace(int pos)
+{
+        int i = 0;
+        for ( ; REPLACE.sub[i].subtree == pos; i++)
+                ;
+
+        return i;
+}
+
+static void
+make_replace(int *pos)
+{
+        REPLACE.sub[REPLACE.size].letter = (char) REPLACE.size + 65;
+        REPLACE.sub[REPLACE.size].subtree = *pos;
+        REPLACE.size += 1;
+}
+
 void
-tex_subtree(tree_t *eq, int *pos, FILE *stream)
+tex_subtree(tree_t *eq, int *pos, bool repl, FILE *stream)
 {
         tree_data_t data = eq->nodes[*pos].data;
+
+        int len = 0;
+        if (!repl) {
+                tex_find_weight(eq, pos, &len);
+                if (len > REPL_WEIGHT && *pos != eq->root) {
+                        make_replace(pos);
+                        eq->nodes[*pos].data.replace = true;
+                }
+
+                if (eq->nodes[*pos].data.replace) {
+                        fprintf(stream, " %c ", REPLACE.sub[find_replace(*pos) - 1].letter);
+                        return;
+                }
+        }
+
         if (data.copy == true)
                 fprintf(stream, " {\\left(");
         switch (data.type) {
@@ -197,7 +246,7 @@ tex_subtree(tree_t *eq, int *pos, FILE *stream)
                         tex_const(eq, pos, stream);
                         break;
                 case DIFF_OP:
-                        tex_op(eq, pos, stream);
+                        tex_op(eq, pos, repl, stream);
                         break;
                 default:
                         break;
@@ -283,13 +332,29 @@ tex_end()
         fclose(TEX_STREAM);
 }
 
+static void
+tex_replace(tree_t *eq)
+{
+        fprintf(TEX_STREAM, " где ");
+
+        for (int i = 0; i < REPLACE.size; i++) {
+                fprintf(TEX_STREAM, "$%c = ", REPLACE.sub[i].letter);
+                tex_subtree(eq, &REPLACE.sub[i].subtree, true, TEX_STREAM);
+                fprintf(TEX_STREAM, "$,");
+        }
+}
+
 void
 tex_eq_dump(tree_t *eq)
 {
         fprintf(TEX_STREAM, "%s\n", EQ_PHRASE);
         fprintf(TEX_STREAM, "\\[ \n f(x) = ");
-        tex_subtree(eq, &eq->root, TEX_STREAM);
+        tex_subtree(eq, &eq->root, false, TEX_STREAM);
         fprintf(TEX_STREAM, "\\]\n");
+
+        if (REPLACE.size != 0) {
+                tex_replace(eq);
+        }
 }
 
 void
@@ -297,8 +362,12 @@ tex_sim_dump(tree_t *eq)
 {
         fprintf(TEX_STREAM, "%s\n", SIM_PHRASE);
         fprintf(TEX_STREAM, "\\[ \n f'(x) = ");
-        tex_subtree(eq, &eq->root, TEX_STREAM);
+        tex_subtree(eq, &eq->root, false, TEX_STREAM);
         fprintf(TEX_STREAM, "\\]\n");
+
+        if (REPLACE.size != 0) {
+                tex_replace(eq);
+        }
 }
 
 void 
@@ -307,7 +376,11 @@ tex_diff_dump(tree_t *eq)
         size_t curr = (size_t) rand() % (sizeof(PHRASE) / sizeof(char *));
         fprintf(TEX_STREAM, "%s\n", PHRASE[curr]);
         fprintf(TEX_STREAM, "\\[ \n f'(x) = ");
-        tex_subtree(eq, &eq->root, TEX_STREAM);
+        tex_subtree(eq, &eq->root, false, TEX_STREAM);
         fprintf(TEX_STREAM, "\\]\n");
+        
+        if (REPLACE.size != 0) {
+                tex_replace(eq);
+        }
 }
 

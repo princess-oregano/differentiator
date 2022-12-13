@@ -8,6 +8,7 @@ enum par_err {
         PAR_NO_ERR = 0,
         PAR_BRACE  = 1,
         PAR_OP     = 2,
+        PAR_INSERT = 3,
 };
 
 // Builds tree from tokens.

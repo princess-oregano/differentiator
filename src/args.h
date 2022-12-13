@@ -8,7 +8,7 @@ enum arg_err_t {
 
 struct params_t {
         char *src_filename = nullptr;
-        bool verbose       = false;
+        char *dst_filename = nullptr;
 };
 
 // Processes command line arguments.

@@ -12,31 +12,38 @@
 #include "args.h"
 
 // Left/right subtrees.
-#define DL(arg) diff->nodes[arg].left
-#define DR(arg) diff->nodes[arg].right
-#define EL(arg) eq->nodes[arg].left
-#define ER(arg) eq->nodes[arg].right
+#define DL(ARG) diff->nodes[ARG].left
+#define DR(ARG) diff->nodes[ARG].right
+#define EL(ARG) eq->nodes[ARG].left
+#define ER(ARG) eq->nodes[ARG].right
 // Data.
-#define DD(arg) diff->nodes[arg].data
-#define ED(arg) eq->nodes[arg].data
+#define DD(ARG) diff->nodes[ARG].data
+#define ED(ARG) eq->nodes[ARG].data
 // Copy.
-#define CPY(esub, dsub) diff_copy(eq, diff, &esub, &dsub);
+#define CPY(EQ_SUBTREE, DIFF_SUBTREE) diff_copy(eq, diff, &EQ_SUBTREE, &DIFF_SUBTREE)
 // Take derivative.
-#define TKE(esub, dsub) diff_take(eq, diff, &esub, &dsub);
+#define TKE(EQ_SUBTREE, DIFF_SUBTREE) diff_take(eq, diff, &EQ_SUBTREE, &DIFF_SUBTREE)
 // Number in tree.
-#define NUM(n) {.type = DIFF_NUM, .val = {.num = n}}
+#define NUM(N) {.type = DIFF_NUM, .val = {.num = N}}
 // Operation in tree.
-#define OP(n) {.type = DIFF_OP, .val = {.op = OP_##n}}
+#define OP(OP_NAME) {.type = DIFF_OP, .val = {.op = OP_##OP_NAME}}
 
 int
-diff_parse(tree_t *tree, char *buffer, bool verbose)
+diff_parse(tree_t *tree, char *buffer)
 {
         tok_arr_t tok_arr {};
 
-        lexer(buffer, &tok_arr);
+        int err = 0;
+
+        if ((err = lexer(buffer, &tok_arr)) != LEX_NO_ERR) {
+                return err;
+        }
 
         int count = 0;
-        parse(tree, tok_arr.ptr, &tree->root, &count);
+        if ((err = parse(tree, tok_arr.ptr, &tree->root, &count)) != 
+                                                                PAR_NO_ERR) {
+                return err;
+        }
 
         free(tok_arr.ptr);
         include_graph(tree_graph_dump(tree, VAR_INFO(tree)));
@@ -45,18 +52,21 @@ diff_parse(tree_t *tree, char *buffer, bool verbose)
 }
 
 // Copies subtree to given destination.
-static void
+static int
 diff_copy(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
-        node_insert(diff, dpos, {DIFF_POISON, {}});
+        if (node_insert(diff, dpos, {DIFF_POISON, {}}) != ERR_NO_ERR)
+                return D_ERR_INSERT;
 
         DD(*dpos) = ED(*epos);
 
         if (EL(*epos) != -1) 
-                CPY(EL(*epos), DL(*dpos))
+                CPY(EL(*epos), DL(*dpos));
 
         if (ER(*epos) != -1)
-                CPY(ER(*epos), DR(*dpos))
+                CPY(ER(*epos), DR(*dpos));
+
+        return D_ERR_NO_ERR;
 }
 
 static bool
@@ -87,13 +97,13 @@ diff_take_add_sub(tree_t *eq, tree_t *diff, int *epos, int *dpos, bool plus)
         else
                 DD(*dpos).val.op = OP_SUB;
 
-        CPY(EL(*epos), DL(*dpos))
+        CPY(EL(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
-        CPY(ER(*epos), DR(*dpos))
+        CPY(ER(*epos), DR(*dpos));
         DD(DR(*dpos)).copy = true;
 
-        TKE(EL(*epos), DL(*dpos))
-        TKE(ER(*epos), DR(*dpos))
+        TKE(EL(*epos), DL(*dpos));
+        TKE(ER(*epos), DR(*dpos));
 }
 
 static void
@@ -107,16 +117,16 @@ diff_take_mul(tree_t *eq, tree_t *diff, int *epos, int *dpos, bool div)
         node_insert(diff, &DL(*dpos), OP(MUL));
         node_insert(diff, &DR(*dpos), OP(MUL));
 
-        CPY(ER(*epos), DR(DL(*dpos)))
-        CPY(EL(*epos), DR(DR(*dpos)))
+        CPY(ER(*epos), DR(DL(*dpos)));
+        CPY(EL(*epos), DR(DR(*dpos)));
 
-        CPY(ER(*epos), DL(DR(*dpos)))
+        CPY(ER(*epos), DL(DR(*dpos)));
         DD(DL(DR(*dpos))).copy = true;
-        CPY(EL(*epos), DL(DL(*dpos)))
+        CPY(EL(*epos), DL(DL(*dpos)));
         DD(DL(DL(*dpos))).copy = true;
 
-        TKE(ER(*epos), DL(DR(*dpos)))
-        TKE(EL(*epos), DL(DL(*dpos)))
+        TKE(ER(*epos), DL(DR(*dpos)));
+        TKE(EL(*epos), DL(DL(*dpos)));
 }
 
 static void
@@ -132,7 +142,7 @@ diff_take_div(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
         node_insert(diff, &DR(DR(*dpos)), NUM(2));
 
-        CPY(ER(*epos), DL(DR(*dpos)))
+        CPY(ER(*epos), DL(DR(*dpos)));
 
         diff_take_mul(eq, diff, epos, &DL(*dpos), true);
 }
@@ -145,23 +155,23 @@ diff_pow(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         // Derivative of power.
         node_insert(diff, &DR(*dpos), OP(MUL));
 
-        CPY(ER(*epos), DL(DR(*dpos)))
+        CPY(ER(*epos), DL(DR(*dpos)));
 
         node_insert(diff, &DR(DR(*dpos)), OP(POW));
 
-        CPY(EL(*epos), DL(DR(DR(*dpos))))
+        CPY(EL(*epos), DL(DR(DR(*dpos))));
 
         node_insert(diff, &DR(DR(DR(*dpos))), OP(SUB));
 
-        CPY(ER(*epos), DL(DR(DR(DR(*dpos)))))
+        CPY(ER(*epos), DL(DR(DR(DR(*dpos)))));
 
         node_insert(diff, &DR(DR(DR(DR(*dpos)))), NUM(1));
 
         // Derivative of function in power.
-        CPY(EL(*epos), DL(*dpos))
+        CPY(EL(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
 
-        TKE(EL(*epos), DL(*dpos))
+        TKE(EL(*epos), DL(*dpos));
 }
 
 static void
@@ -171,18 +181,18 @@ diff_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
         node_insert(diff, &DR(*dpos), OP(MUL));
 
-        CPY(*epos, DR(DR(*dpos)))
+        CPY(*epos, DR(DR(*dpos)));
 
         node_insert(diff, &DL(DR(*dpos)), OP(LN));
 
         node_insert(diff, &DL(DL(DR(*dpos))), {DIFF_POISON, {}});
         
-        CPY(EL(*epos), DR(DL(DR(*dpos))))
+        CPY(EL(*epos), DR(DL(DR(*dpos))));
 
-        CPY(ER(*epos), DL(*dpos))
+        CPY(ER(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
 
-        TKE(ER(*epos), DL(*dpos))
+        TKE(ER(*epos), DL(*dpos));
 }
 
 static void
@@ -190,7 +200,7 @@ diff_pow_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 {
         DD(*dpos).val.op = OP_MUL;
 
-        CPY(*epos, DL(*dpos))
+        CPY(*epos, DL(*dpos));
 
         node_insert(diff, &DR(*dpos), OP(ADD));
 
@@ -200,23 +210,23 @@ diff_pow_exp(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         node_insert(diff, &DR(DL(DR(*dpos))), OP(LN));
 
         node_insert(diff, &DL(DR(DL(DR(*dpos)))), {DIFF_POISON, {}});
-        CPY(EL(*epos), DR(DR(DL(DR(*dpos)))))
+        CPY(EL(*epos), DR(DR(DL(DR(*dpos)))));
 
         // Right subtree of '+' node.
         node_insert(diff, &DR(DR(*dpos)), OP(DIV));
 
         node_insert(diff, &DL(DR(DR(*dpos))), OP(MUL));
 
-        CPY(EL(*epos), DR(DL(DR(DR(*dpos)))))
-        CPY(EL(*epos), DR(DR(DR(*dpos))))
+        CPY(EL(*epos), DR(DL(DR(DR(*dpos)))));
+        CPY(EL(*epos), DR(DR(DR(*dpos))));
 
-        CPY(ER(*epos), DL(DL(DR(*dpos))))
+        CPY(ER(*epos), DL(DL(DR(*dpos))));
         DD(DL(DL(DR(*dpos)))).copy = true;
-        CPY(EL(*epos), DL(DL(DR(DR((*dpos))))))
+        CPY(EL(*epos), DL(DL(DR(DR((*dpos))))));
         DD(DL(DL(DR(DR((*dpos)))))).copy = true;
 
-        TKE(ER(*epos), DL(DL(DR(*dpos))))
-        TKE(EL(*epos), DL(DL(DR(DR((*dpos))))))
+        TKE(ER(*epos), DL(DL(DR(*dpos))));
+        TKE(EL(*epos), DL(DL(DR(DR((*dpos))))));
 }
 
 static void
@@ -241,16 +251,16 @@ diff_take_sin(tree_t *eq, tree_t *diff, int *epos, int *dpos)
         // Right subtree.
         node_insert(diff, &DR(*dpos), OP(COS));
 
-        CPY(ER(*epos), DR(DR(*dpos)))
+        CPY(ER(*epos), DR(DR(*dpos)));
 
         // No left child for trigonometric functions.
         node_insert(diff, &DL(DR(*dpos)), {DIFF_POISON, {}});
         
         // Left subtree.
-        CPY(ER(*epos), DL(*dpos))
+        CPY(ER(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
 
-        TKE(ER(*epos), DL(*dpos))
+        TKE(ER(*epos), DL(*dpos));
 }
 
 static void
@@ -265,16 +275,16 @@ diff_take_cos(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
         node_insert(diff, &DR(DR(*dpos)), OP(SIN));
 
-        CPY(ER(*epos), DR(DR(DR(*dpos))))
+        CPY(ER(*epos), DR(DR(DR(*dpos))));
 
         // No left child for trigonometric functions.
         node_insert(diff, &DL(DR(DR(*dpos))), {DIFF_POISON, {}});
 
         // Left subtree.
-        CPY(ER(*epos), DL(*dpos))
+        CPY(ER(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
 
-        TKE(ER(*epos), DL(*dpos))
+        TKE(ER(*epos), DL(*dpos));
 }
 
 static void
@@ -287,13 +297,13 @@ diff_take_ln(tree_t *eq, tree_t *diff, int *epos, int *dpos)
 
         node_insert(diff, &DL(DR(*dpos)), NUM(1));
 
-        CPY(ER(*epos), DR(DR(*dpos)))
+        CPY(ER(*epos), DR(DR(*dpos)));
 
         // Left subtree.
-        CPY(ER(*epos), DL(*dpos))
+        CPY(ER(*epos), DL(*dpos));
         DD(DL(*dpos)).copy = true;
 
-        TKE(ER(*epos), DL(*dpos))
+        TKE(ER(*epos), DL(*dpos));
 }
 
 static int

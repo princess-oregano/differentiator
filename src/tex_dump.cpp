@@ -7,7 +7,7 @@
 #include "log.h"
 
 static replace_t REPLACE {};
-const int REPL_WEIGHT = 20;
+const int REPL_WEIGHT = 17;
 static FILE *TEX_STREAM = nullptr;
 static const char *TEX_FILENAME = nullptr;
 static const char *PHRASE[] = {
@@ -206,18 +206,19 @@ static int
 find_replace(int pos)
 {
         int i = 0;
-        for ( ; REPLACE.sub[i].subtree == pos; i++)
+        for ( ; REPLACE.sub[i].subtree != pos; i++)
                 ;
 
         return i;
 }
 
 static void
-make_replace(int *pos)
+make_replace(tree_t *eq, int *pos)
 {
         REPLACE.sub[REPLACE.size].letter = (char) REPLACE.size + 65;
         REPLACE.sub[REPLACE.size].subtree = *pos;
         REPLACE.size += 1;
+        eq->nodes[*pos].data.replace = true;
 }
 
 void
@@ -229,9 +230,8 @@ tex_subtree(tree_t *eq, int *pos, bool repl, FILE *stream)
 
         if (!repl) {
                 len = tex_find_weight(eq, pos);
-                if (len > REPL_WEIGHT && *pos != eq->root) {
-                        make_replace(pos);
-                        eq->nodes[*pos].data.replace = true;
+                if (len >= REPL_WEIGHT && len < REPL_WEIGHT + 2 && *pos != eq->root) {
+                        make_replace(eq, pos);
                 }
 
                 if (eq->nodes[*pos].data.replace) {
@@ -261,7 +261,7 @@ tex_subtree(tree_t *eq, int *pos, bool repl, FILE *stream)
                         tex_const(eq, pos, stream);
                         break;
                 case DIFF_OP:
-                        tex_op(eq, pos, repl, stream);
+                        tex_op(eq, pos, false, stream);
                         break;
                 default:
                         break;
